@@ -1,0 +1,4 @@
+[report]
+omit =
+    gitstorage_dev/*.py
+    */migrations/*.py

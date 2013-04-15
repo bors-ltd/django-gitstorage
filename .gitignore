@@ -1,0 +1,9 @@
+*.mo
+*.pyc
+.coverage
+.venv
+dist/
+django_gitstorage.egg-info/
+gitstorage/tests/checkout/
+htmlcov/
+README.html

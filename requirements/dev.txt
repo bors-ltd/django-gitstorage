@@ -1,0 +1,6 @@
+-r ../requirements.txt
+coverage==3.6
+django-discover-runner==0.4
+factory_boy==2.0.2
+ipdb==0.7
+docutils==0.10

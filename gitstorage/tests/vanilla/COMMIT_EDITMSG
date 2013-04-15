@@ -1,0 +1,28 @@
+reference repository created by git
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+#
+# Initial commit
+#
+# Changes to be committed:
+#   (use "git rm --cached <file>..." to unstage)
+#
+#	new file:   foo.txt
+#	new file:   foo/bar/baz/qux.txt
+#
+diff --git a/foo.txt b/foo.txt
+new file mode 100644
+index 0000000..257cc56
+--- /dev/null
++++ b/foo.txt
+@@ -0,0 +1 @@
++foo
+diff --git a/foo/bar/baz/qux.txt b/foo/bar/baz/qux.txt
+new file mode 100644
+index 0000000..7601807
+--- /dev/null
++++ b/foo/bar/baz/qux.txt
+@@ -0,0 +1 @@
++baz

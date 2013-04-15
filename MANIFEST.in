@@ -1,0 +1,7 @@
+include COPYING Makefile README.txt requirements.txt
+
+recursive-include gitstorage *.py
+recursive-include gitstorage *.po *.mo
+recursive-exclude gitstorage/tests *.py
+
+recursive-exclude gitstorage_dev *.py
