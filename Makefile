@@ -25,4 +25,4 @@ compilemessages:
 release: test compilemessages
 	python setup.py sdist
 
-.PHONY: clean docs test coverage makemessages compilemessages
+.PHONY: clean docs test coverage makemessages compilemessages release
