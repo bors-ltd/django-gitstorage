@@ -1,4 +1,4 @@
-include COPYING Makefile README.txt requirements.txt
+include COPYING README.txt requirements.txt
 
 recursive-include gitstorage *.py
 recursive-include gitstorage *.po *.mo
