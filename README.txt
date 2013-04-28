@@ -8,7 +8,7 @@ GitStorage is:
 - A Django `storage`_ to browse the contents of the repository (what you see in your working copy)
   from a bare repository (without a working copy);
 
-- `Models`_ to enrich Git objects, namely add metadata to blobs and allow access to trees
+- `Models`_ to enrich Git objects, namely add metadata to blobs and allow access to trees;
 
 - Mixin `views`_ to combine with class-based views to browse the repository and add or remove objects.
   on top of the repository;
