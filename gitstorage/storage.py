@@ -156,7 +156,9 @@ class GitStorage(storage.Storage):
         """
         path = self._git_path(name)
         if hasattr(content, 'temporary_file_path'):
-            blob = self.repository.create_blob_fromfile(content.temporary_file_path())
+            # "create_blob_fromfile" did the job but is forbidden for bare repositories since 0.18.0...
+            # but there is a "git_blob_create_fromdisk" in libgit2 so there is hope!
+            blob = self.repository.create_blob(content.read())
             content.close()
         else:
             blob = self.repository.create_blob(content.read())
@@ -177,7 +179,7 @@ class GitStorage(storage.Storage):
                                       utils.make_signature(self.committer_name, self.committer_email, tz=tz),
                                       message,
                                       tree,
-                                      [self.repository.head.oid])
+                                      [self.repository.head.target])
 
     def delete(self, name):
         """Delete the blob at the given path name by committing a tree without it.
@@ -217,9 +219,9 @@ class GitStorage(storage.Storage):
         tree = self.repository.find_object(path)
         directories, files = [], []
         for entry in tree:
-            if entry.attributes in wrappers.GIT_FILEMODE_BLOB_KINDS:
+            if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
                 files.append(entry.name.decode(GIT_FILESYSTEM_ENCODING))
-            elif entry.attributes == wrappers.GIT_FILEMODE_TREE:
+            elif entry.filemode == wrappers.GIT_FILEMODE_TREE:
                 directories.append(entry.name.decode(GIT_FILESYSTEM_ENCODING))
         return directories, files
 

@@ -14,15 +14,12 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import absolute_import, print_function, unicode_literals
-
 """
 Wrappers with enhanced methods around pygit2 objects.
 
 Intentionally not imported unicode_literals because pygit2 didn't.
 """
-
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import datetime
 
@@ -46,8 +43,19 @@ class Repository(pygit2.Repository):
 
     def __init__(self, *args):
         super(Repository, self).__init__(*args)
+        assert self.is_bare
         # Always load the index
-        self.index.read_tree(self.head.tree.oid)
+        self.index.read_tree(self.tree.oid)
+
+    @property
+    def commit(self):
+        """shortcut to the head commit"""
+        return self[self.head.target]
+
+    @property
+    def tree(self):
+        """shortcut to the head tree"""
+        return self[self.head.target].tree
 
     def find_object(self, path):
         """Find a tree, blob, etc. by its path in the working directory.
@@ -59,7 +67,7 @@ class Repository(pygit2.Repository):
             return self[self.index[path].oid]
         except KeyError:
             # Tree traversal
-            tree = self.head.tree
+            tree = self.tree
             if not path:
                 return tree
             segments = path.split("/")
@@ -79,8 +87,8 @@ class Repository(pygit2.Repository):
 
             TODO git_index_add would probably do the job if I could add an in-memory entry.
         """
-        root_tree_builder = self.TreeBuilder(self.head.tree)
-        current_tree = self[self.head.tree.oid]
+        root_tree_builder = self.TreeBuilder(self.tree)
+        current_tree = self.tree
 
         # Create directories hierarchy from last to first
         segments = path.split("/")
@@ -143,8 +151,8 @@ class Repository(pygit2.Repository):
 
             TODO git_index_remove would probably do the job if I could add an in-memory entry.
         """
-        root_tree_builder = self.TreeBuilder(self.head.tree)
-        current_tree = self[self.head.tree.oid]
+        root_tree_builder = self.TreeBuilder(self.tree)
+        current_tree = self.tree
 
         segments = path.split("/")
         name = segments.pop()

@@ -74,7 +74,7 @@ class ObjectViewMixin(object):
             # Yo dawg, hide hidden files
             if entry.name[0] == ".":
                 continue
-            if entry.attributes == wrappers.GIT_FILEMODE_TREE:
+            if entry.filemode == wrappers.GIT_FILEMODE_TREE:
                 name = entry.name.decode(git_storage.GIT_FILESYSTEM_ENCODING)
                 if allowed_names is None or name in allowed_names:
                     directories.append({
@@ -96,7 +96,7 @@ class ObjectViewMixin(object):
         """Context variables for any type of Git object and on every page."""
         context = super(ObjectViewMixin, self).get_context_data(**kwargs)
 
-        root_directories = self.filter_directories(self.storage.repository.head.tree, "")
+        root_directories = self.filter_directories(self.storage.repository.tree, "")
 
         breadcrumbs = []
         path = self.path
@@ -197,7 +197,7 @@ class TreeViewMixin(ObjectViewMixin):
             # Yo dawg, hide hidden files
             if entry.name[0] == ".":
                 continue
-            if entry.attributes in wrappers.GIT_FILEMODE_BLOB_KINDS:
+            if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
                 oid_to_name[entry.hex] = entry.name.decode(git_storage.GIT_FILESYSTEM_ENCODING)
 
         # Fetch metadata for all of the entries in a single query

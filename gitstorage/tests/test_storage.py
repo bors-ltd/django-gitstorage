@@ -43,12 +43,12 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         repository = self.storage.repository
         self.assertTrue(path.exists(self.location))
         self.assertEqual(self.storage.location, self.location)
-        self.assertIsNotNone(repository.head)
+        self.assertIsNotNone(repository.commit)
         self.assertIn(self.storage.reference, repository.listall_references())
 
         # Introspect commit
-        commit = repository.head
-        self.assertEqual("Initial commit by Git Storage\n", commit.message)
+        commit = repository.commit
+        self.assertEqual("Initial commit by Git Storage", commit.message)
 
     def test_path_root(self):
         name = "foo.txt"
@@ -73,8 +73,8 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         self.assertEqual(name, ret)
 
         # Introspect commit
-        commit = self.storage.repository.head
-        self.assertEqual("Saved by Git Storage\n", commit.message)
+        commit = self.storage.repository.commit
+        self.assertEqual("Saved by Git Storage", commit.message)
         tree = commit.tree
         self.assertItemsEqual([name], ls_tree(tree))
         blob = tree[name].to_object()
@@ -130,7 +130,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         """Open an existing repository (created by git for reference)."""
         repository = self.storage.repository
         self.assertEqual(self.storage.location, self.location)
-        self.assertEqual('9c2c91388ca1b5b6e247038f2644493ff47f116e', repository.head.hex)
+        self.assertEqual('9c2c91388ca1b5b6e247038f2644493ff47f116e', repository.commit.hex)
         self.assertTupleEqual((self.storage.reference,), repository.listall_references())
 
     def test_open_root(self):
@@ -167,7 +167,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.storage._save(name, SimpleUploadedFile(name, b'toto'))
 
         # Introspect commit
-        commit = self.storage.repository.head
+        commit = self.storage.repository.commit
         tree = commit.tree
         self.assertItemsEqual(["foo.txt", "foo", "path"], ls_tree(tree))
 
@@ -195,8 +195,8 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.storage.delete(name)
 
         # Introspect commit
-        commit = self.storage.repository.head
-        self.assertEqual("Deleted by Git Storage\n", commit.message)
+        commit = self.storage.repository.commit
+        self.assertEqual("Deleted by Git Storage", commit.message)
         tree = commit.tree
         self.assertItemsEqual(["foo", "path"], ls_tree(tree))
 
@@ -205,7 +205,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.storage.delete(name)
 
         # Introspect commit
-        commit = self.storage.repository.head
+        commit = self.storage.repository.commit
         tree = commit.tree
         # Empty directory removed
         self.assertItemsEqual(["foo.txt", "path"], ls_tree(tree))

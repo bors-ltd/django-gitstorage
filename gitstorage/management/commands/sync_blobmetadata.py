@@ -28,9 +28,9 @@ class Command(NoArgsCommand):
 
     def sync_tree(self, tree):
         for entry in tree:
-            if entry.attributes == wrappers.GIT_FILEMODE_TREE:
+            if entry.filemode == wrappers.GIT_FILEMODE_TREE:
                 self.sync_tree(entry.to_object())
-            elif entry.attributes in wrappers.GIT_FILEMODE_BLOB_KINDS:
+            elif entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
                 if entry.hex in self.known_blobs:
                     continue
                 models.BlobMetadata.objects.create_from_name(entry.name, entry.hex)
@@ -42,4 +42,4 @@ class Command(NoArgsCommand):
 
         self.known_blobs = set(models.BlobMetadata.objects.values_list('oid', flat=True))
 
-        self.sync_tree(repository.head.tree)
+        self.sync_tree(repository.tree)

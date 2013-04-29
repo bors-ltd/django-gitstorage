@@ -1,6 +1,7 @@
 *.mo
 *.pyc
 .coverage
+.idea/
 .venv
 dist/
 django_gitstorage.egg-info/
