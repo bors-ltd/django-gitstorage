@@ -43,15 +43,15 @@ class PreviewViewTestCase(VanillaRepositoryMixin, TestCase):
         self.storage = storage.GitStorage(self.location)
         self.view = views.TestPreviewView()
         self.view.storage = self.storage
-        self.view.path = Path("foo/bar/baz/qux.txt")
+        self.view.path = Path("path/with/unicode/de\u0301po\u0302t.txt")
         self.view.object = self.storage.repository.find_object(self.view.path)
         self.view.metadata = factories.BlobMetadataFactory(oid=self.view.object.hex, mimetype="text/plain")
 
     def test_preview(self):
         self.view.request = RequestFactory().get(self.view.path)
         response = self.view.get(self.view.request)
-        self.assertEqual(response['Content-Disposition'], "inline; filename=qux.txt")
-        self.assertContains(response, "qux")
+        self.assertEqual(response['Content-Disposition'], "inline; filename=dépôt.txt".encode('latin1'))
+        self.assertContains(response, "de\u0301po\u0302t".encode('utf8'))
 
 
 class DownloadViewTestCase(VanillaRepositoryMixin, TestCase):
@@ -61,15 +61,15 @@ class DownloadViewTestCase(VanillaRepositoryMixin, TestCase):
         self.storage = storage.GitStorage(self.location)
         self.view = views.TestDownloadView()
         self.view.storage = self.storage
-        self.view.path = Path("foo/bar/baz/qux.txt")
+        self.view.path = Path("path/with/unicode/de\u0301po\u0302t.txt")
         self.view.object = self.storage.repository.find_object(self.view.path)
         self.view.metadata = factories.BlobMetadataFactory(oid=self.view.object.hex, mimetype="text/plain")
 
     def test_download(self):
         self.view.request = RequestFactory().get(self.view.path)
         response = self.view.get(self.view.request)
-        self.assertEqual(response['Content-Disposition'], "attachment; filename=qux.txt")
-        self.assertContains(response, "qux")
+        self.assertEqual(response['Content-Disposition'], "attachment; filename=dépôt.txt".encode('latin1'))
+        self.assertContains(response, "de\u0301po\u0302t".encode('utf8'))
 
 
 class DeleteViewTestCase(VanillaRepositoryMixin, TestCase):

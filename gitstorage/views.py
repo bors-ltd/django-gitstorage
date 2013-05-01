@@ -19,6 +19,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from functools import update_wrapper
 import logging
 import operator
+import unicodedata
 
 from django.core.exceptions import PermissionDenied
 from django.http.response import Http404, StreamingHttpResponse
@@ -157,7 +158,8 @@ class PreviewViewMixin(BlobViewMixin):
 
     def get(self, request, *args, **kwargs):
         content = self.storage.open(self.path)
-        filename = self.path.name
+        # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
+        filename = unicodedata.normalize('NFKC', self.path.name)
         response = StreamingHttpResponse(content, content_type=self.metadata.mimetype)
         response['Content-Disposition'] = "inline; filename=%s" % (filename,)
         return response
@@ -167,7 +169,8 @@ class DownloadViewMixin(BlobViewMixin):
 
     def get(self, request, *args, **kwargs):
         content = self.storage.open(self.path)
-        filename = self.path.name
+        # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
+        filename = unicodedata.normalize('NFKC', self.path.name)
         response = StreamingHttpResponse(content, content_type=self.metadata.mimetype)
         response['Content-Disposition'] = "attachment; filename=%s" % (filename,)
         return response

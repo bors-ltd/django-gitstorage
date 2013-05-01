@@ -130,7 +130,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         """Open an existing repository (created by git for reference)."""
         repository = self.storage.repository
         self.assertEqual(self.storage.location, self.location)
-        self.assertEqual('9c2c91388ca1b5b6e247038f2644493ff47f116e', repository.commit.hex)
+        self.assertEqual('d104ab48cc867e89928e0094d192e5516a98dd25', repository.commit.hex)
         self.assertTupleEqual((self.storage.reference,), repository.listall_references())
 
     def test_open_root(self):
