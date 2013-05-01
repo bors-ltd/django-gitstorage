@@ -3,8 +3,10 @@
 .coverage
 .idea/
 .venv
+README.html
 dist/
 django_gitstorage.egg-info/
 gitstorage/tests/checkout/
 htmlcov/
-README.html
+libgit2
+pygit2
