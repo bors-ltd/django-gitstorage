@@ -156,9 +156,7 @@ class GitStorage(storage.Storage):
         """
         path = self._git_path(name)
         if hasattr(content, 'temporary_file_path'):
-            # "create_blob_fromfile" did the job but is forbidden for bare repositories since 0.18.0...
-            # but there is a "git_blob_create_fromdisk" in libgit2 so there is hope!
-            blob = self.repository.create_blob(content.read())
+            blob = self.repository.create_blob_fromdisk(content.temporary_file_path())
             content.close()
         else:
             blob = self.repository.create_blob(content.read())
