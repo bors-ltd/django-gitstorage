@@ -60,19 +60,19 @@ class ObjectViewMixin(object):
         """Abstract, no implicit permission."""
         raise NotImplementedError()
 
-    def filter_directories(self, tree, parent_path):
+    def filter_directories(self, tree, path):
         """
         Filter tree entries of the given tree by permission allowance.
 
         Should be in TreeViewMixin buy we want the root directories on every page.
         """
         user = self.request.user
-        allowed_names = models.TreePermission.objects.allowed_names(user, parent_path)
+        allowed_names = models.TreePermission.objects.allowed_names(user, path)
 
         # Don't use listdir to have direct access to the oid
         directories = []
         for entry in tree:
-            # Yo dawg, hide hidden files
+            # Hide hidden files
             if entry.name[0] == ".":
                 continue
             if entry.filemode == wrappers.GIT_FILEMODE_TREE:
@@ -80,6 +80,7 @@ class ObjectViewMixin(object):
                 if allowed_names is None or name in allowed_names:
                     directories.append({
                         'name': name,
+                        'path': path.resolve(name),
                     })
         return sorted(directories, key=operator.itemgetter('name'))
 
@@ -97,7 +98,7 @@ class ObjectViewMixin(object):
         """Context variables for any type of Git object and on every page."""
         context = super(ObjectViewMixin, self).get_context_data(**kwargs)
 
-        root_directories = self.filter_directories(self.storage.repository.tree, "")
+        root_directories = self.filter_directories(self.storage.repository.tree, Path(""))
 
         breadcrumbs = []
         path = self.path
@@ -197,7 +198,7 @@ class TreeViewMixin(ObjectViewMixin):
         # Always assume files are readable if the parent tree is
         oid_to_name = {}
         for entry in self.object:
-            # Yo dawg, hide hidden files
+            # Hide hidden files
             if entry.name[0] == ".":
                 continue
             if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
@@ -212,13 +213,14 @@ class TreeViewMixin(ObjectViewMixin):
         for oid, name in oid_to_name.iteritems():
             files.append({
                 'name': name,
+                'path': self.path.resolve(name),
                 'metadata': metadata[oid],
             })
         return sorted(files, key=operator.itemgetter('name'))
 
     def get_context_data(self, **kwargs):
         context = super(TreeViewMixin, self).get_context_data(**kwargs)
-        context['directories'] = self.filter_directories(self.object, self.path.parent_path)
+        context['directories'] = self.filter_directories(self.object, self.path)
         context['files'] = self.filter_files()
         return context
 

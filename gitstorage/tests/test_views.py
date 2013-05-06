@@ -230,8 +230,10 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
             'object': self.view.object,
             'metadata': self.view.metadata,
             'root_directories': [
-                {'name': "foo"},
-                {'name': "path"}],
+                {'name': "foo",
+                 'path': "foo"},
+                {'name': "path",
+                 'path': "path"}],
             'breadcrumbs': ["foo", "foo/bar", "foo/bar/baz", "foo/bar/baz/qux.txt"]})
 
     def test_dispatch(self):
@@ -344,7 +346,9 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
         metadata = factories.BlobMetadataFactory(oid="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
 
         files = list(self.view.filter_files())
-        self.assertEqual(files, [{'name': "qux.txt", 'metadata': metadata}])
+        self.assertEqual(files, [{'name': "qux.txt",
+                                  'path': "foo/bar/baz/qux.txt",
+                                  'metadata': metadata}])
 
     def test_filter_files_hidden(self):
         self.view = views.TestTreeView()
@@ -369,7 +373,9 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
             'breadcrumbs': ["foo", "foo/bar", "foo/bar/baz"],
             # Specific part
             'directories': [],
-            'files': [{'name': "qux.txt", 'metadata': metadata}]})
+            'files': [{'name': "qux.txt",
+                       'path': "foo/bar/baz/qux.txt",
+                       'metadata': metadata}]})
 
 
 class AdminPermissionTestCase(TestCase):
