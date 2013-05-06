@@ -81,6 +81,7 @@ class ObjectViewMixin(object):
                     directories.append({
                         'name': name,
                         'path': path.resolve(name),
+                        'metadata': models.TreeMetadata(oid=entry.hex),
                     })
         return sorted(directories, key=operator.itemgetter('name'))
 

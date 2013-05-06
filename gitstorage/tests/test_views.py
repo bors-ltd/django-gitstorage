@@ -231,9 +231,11 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
             'metadata': self.view.metadata,
             'root_directories': [
                 {'name': "foo",
-                 'path': "foo"},
+                 'path': "foo",
+                 'metadata': models.TreeMetadata(oid="2c58a3b070f4943b26efc8497bfb90bccd745648")},
                 {'name': "path",
-                 'path': "path"}],
+                 'path': "path",
+                 'metadata': models.TreeMetadata(oid="71aedfd00ff24955665278aecdf0649fbddc4031")}],
             'breadcrumbs': ["foo", "foo/bar", "foo/bar/baz", "foo/bar/baz/qux.txt"]})
 
     def test_dispatch(self):
