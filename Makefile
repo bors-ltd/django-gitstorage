@@ -6,7 +6,7 @@ clean:
 	find $(PACKAGE) "(" -name "*.pyc" -or -name "*.mo" ")" -delete
 
 docs:
-	rst2html.py README.txt > README.html
+	rst2html.py README.rst > README.html
 
 test: clean
 	python manage_dev.py test
