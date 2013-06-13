@@ -12,4 +12,4 @@ setup(name="django-gitstorage",
       packages=find_packages(),
       include_package_data=True,
       setup_requires=['distribute'],
-      install_requires=open('requirements.txt').read())
+      install_requires=open("requirements.txt").readlines())
