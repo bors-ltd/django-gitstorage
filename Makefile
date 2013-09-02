@@ -9,11 +9,11 @@ docs:
 	rst2html.py README.rst > README.html
 
 test: clean
-	python manage_dev.py test
+	python manage.py test
 
 coverage: clean
 	coverage erase
-	coverage run --source=$(PACKAGE) manage_dev.py test --noinput
+	coverage run --source=$(PACKAGE) manage.py test --noinput
 	coverage html
 
 makemessages:
