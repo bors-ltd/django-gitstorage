@@ -77,7 +77,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         self.assertEqual("Saved by Git Storage", commit.message)
         tree = commit.tree
         self.assertItemsEqual([name], ls_tree(tree))
-        blob = tree[name].to_object()
+        blob = self.storage.repository[tree[name].oid]
         self.assertEqual("foo", blob.data)
 
     def test_save_subdir(self):
@@ -89,7 +89,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         # Introspect commit
         tree = self.storage.repository.find_object("foo/bar/baz")
         self.assertItemsEqual(["qux.txt"], ls_tree(tree))
-        blob = tree["qux.txt"].to_object()
+        blob = self.storage.repository[tree["qux.txt"].oid]
         self.assertEqual("qux", blob.data)
 
     def test_open_unknown(self):
@@ -172,15 +172,15 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.assertItemsEqual(["foo.txt", "foo", "path"], ls_tree(tree))
 
         # "foo/"
-        tree = tree["foo"].to_object()
+        tree = self.storage.repository[tree["foo"].oid]
         self.assertItemsEqual(["bar"], ls_tree(tree))
 
         # "foo/bar/"
-        tree = tree["bar"].to_object()
+        tree = self.storage.repository[tree["bar"].oid]
         self.assertItemsEqual(["toto.txt", "baz"], ls_tree(tree))
 
         # "foo/bar/baz"
-        tree = tree["baz"].to_object()
+        tree = self.storage.repository[tree["baz"].oid]
         self.assertItemsEqual(["qux.txt"], ls_tree(tree))
 
     def test_save_temporary_file(self):

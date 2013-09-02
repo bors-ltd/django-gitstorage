@@ -73,8 +73,8 @@ class Repository(pygit2.Repository):
             segments = path.split("/")
             name = segments.pop()
             for segment in segments:
-                tree = tree[segment].to_object()
-            return tree[name].to_object()
+                tree = self[tree[segment].oid]
+            return self[tree[name].oid]
 
     def insert(self, path, blob_oid):
         """Insert the blob at the given path name creating missing intermediate trees.
