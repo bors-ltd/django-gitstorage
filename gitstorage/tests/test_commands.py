@@ -35,7 +35,7 @@ class SyncBlobMedataTestCase(VanillaRepositoryMixin, TestCase):
     def test_sync(self):
         self.assertQuerysetEqual(models.BlobMetadata.objects.all(), [])
         call_command("sync_blobmetadata")
-        metadata = models.BlobMetadata.objects.get(oid="257cc5642cb1a054f08cc83f2d943e56fd3ebe99")
+        metadata = models.BlobMetadata.objects.get(id="257cc5642cb1a054f08cc83f2d943e56fd3ebe99")
         self.assertEqual(metadata.mimetype, "text/plain")
 
     def test_idempotent(self):

@@ -45,7 +45,7 @@ class PreviewViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view.storage = self.storage
         self.view.path = Path("path/with/unicode/de\u0301po\u0302t.txt")
         self.view.object = self.storage.repository.find_object(self.view.path)
-        self.view.metadata = factories.BlobMetadataFactory(oid=self.view.object.hex, mimetype="text/plain")
+        self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
 
     def test_preview(self):
         self.view.request = RequestFactory().get(self.view.path)
@@ -63,7 +63,7 @@ class DownloadViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view.storage = self.storage
         self.view.path = Path("path/with/unicode/de\u0301po\u0302t.txt")
         self.view.object = self.storage.repository.find_object(self.view.path)
-        self.view.metadata = factories.BlobMetadataFactory(oid=self.view.object.hex, mimetype="text/plain")
+        self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
 
     def test_download(self):
         self.view.request = RequestFactory().get(self.view.path)
@@ -81,7 +81,7 @@ class DeleteViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz/qux.txt")
         self.view.object = self.storage.repository.find_object(self.view.path)
-        self.view.metadata = factories.BlobMetadataFactory(oid=self.view.object.hex, mimetype="text/plain")
+        self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
 
     def test_delete(self):
         self.view.request = RequestFactory().post(self.view.path)
@@ -111,7 +111,7 @@ class UploadViewTestCase(VanillaRepositoryMixin, TestCase):
         self.assertEqual(response['Location'], "/success/")
 
         blob = self.storage.repository.find_object("foo/bar/baz/toto.jpg")
-        self.assertTrue(models.BlobMetadata.objects.filter(oid=blob.hex, mimetype="image/jpeg").exists())
+        self.assertTrue(models.BlobMetadata.objects.filter(id=blob.hex, mimetype="image/jpeg").exists())
 
 
 class SharesViewTestCase(VanillaRepositoryMixin, TestCase):
@@ -202,7 +202,7 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz/qux.txt")
         self.view.object = self.storage.repository.find_object(self.view.path)
-        self.view.metadata = factories.BlobMetadataFactory(oid=self.view.object.hex, mimetype="text/plain")
+        self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
         self.view.request = RequestFactory().request()
         self.view.request.path = self.view.path
         self.view.request.user = factories.SuperUserFactory()
@@ -232,10 +232,10 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
             'root_directories': [
                 {'name': "foo",
                  'path': "foo",
-                 'metadata': models.TreeMetadata(oid="2c58a3b070f4943b26efc8497bfb90bccd745648")},
+                 'metadata': models.TreeMetadata(id="2c58a3b070f4943b26efc8497bfb90bccd745648")},
                 {'name': "path",
                  'path': "path",
-                 'metadata': models.TreeMetadata(oid="71aedfd00ff24955665278aecdf0649fbddc4031")}],
+                 'metadata': models.TreeMetadata(id="71aedfd00ff24955665278aecdf0649fbddc4031")}],
             'breadcrumbs': ["foo", "foo/bar", "foo/bar/baz", "foo/bar/baz/qux.txt"]})
 
     def test_dispatch(self):
@@ -292,7 +292,7 @@ class TreeObjectViewTestCase(VanillaRepositoryMixin, TestCase):
         response = self.view.dispatch(self.view.request, self.view.path)
         self.assertContains(response, "path/with/hidden")
         self.assertTrue(self.view._permissions_checked)
-        self.assertEqual(self.view.metadata, models.TreeMetadata(oid=self.view.object.hex))
+        self.assertEqual(self.view.metadata, models.TreeMetadata(id=self.view.object.hex))
 
     def test_dispatch_hidden(self):
         self.assertRaises(PermissionDenied, self.view.dispatch, self.view.request, "path/with/hidden/.directory")
@@ -310,7 +310,7 @@ class BlobViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz/qux.txt")
         self.view.object = self.storage.repository.find_object(self.view.path)
-        self.view.metadata = factories.BlobMetadataFactory(oid=self.view.object.hex, mimetype="text/plain")
+        self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
         self.view.request = RequestFactory().request()
         self.view.request.user = factories.UserFactory()
 
@@ -345,7 +345,7 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
         self.assertIsNone(self.view.check_permissions())
 
     def test_filter_files(self):
-        metadata = factories.BlobMetadataFactory(oid="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
+        metadata = factories.BlobMetadataFactory(id="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
 
         files = list(self.view.filter_files())
         self.assertEqual(files, [{'name': "qux.txt",
@@ -363,7 +363,7 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
         self.assertEqual(files, [])
 
     def test_get_context_data(self):
-        metadata = factories.BlobMetadataFactory(oid="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
+        metadata = factories.BlobMetadataFactory(id="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
 
         self.maxDiff = None
         context = self.view.get_context_data()
@@ -410,7 +410,7 @@ class RepositoryViewTestCase(VanillaRepositoryMixin, TestCase):
         self.assertRaises(TypeError, self.view_class.as_view, foo=None)
 
     def test_blob_view(self):
-        factories.BlobMetadataFactory(oid="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
+        factories.BlobMetadataFactory(id="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
         self.assertRaises(PermissionDenied, self.view, self.request, "foo/bar/baz/qux.txt/")
         self.view_class.type_to_view_class[pygit2.GIT_OBJ_BLOB] = views.TestBlobView
         response = self.view(self.request, "foo/bar/baz/qux.txt/")

@@ -22,7 +22,7 @@ from . import models
 
 
 class BlobMetadataAdmin(admin.ModelAdmin):
-    search_fields = ['oid', 'mimetype']
+    search_fields = ['id', 'mimetype']
     list_filter = ['mimetype']
 
 admin.site.register(models.BlobMetadata, BlobMetadataAdmin)

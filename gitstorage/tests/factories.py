@@ -54,14 +54,14 @@ class SuperUserFactory(UserFactory):
 class BlobMetadataFactory(factory.DjangoModelFactory):
     FACTORY_FOR = models.BlobMetadata
 
-    oid = get_random_string(40, allowed_chars=string.hexdigits.lower())
+    id = get_random_string(40, allowed_chars=string.hexdigits.lower())
     mimetype = "text/plain"
 
 
 class TreeMetadataFactory(factory.DjangoModelFactory):
     FACTORY_FOR = models.TreeMetadata
 
-    oid = get_random_string(40, allowed_chars=string.hexdigits.lower())
+    id = get_random_string(40, allowed_chars=string.hexdigits.lower())
     mimetype = None
 
     @classmethod

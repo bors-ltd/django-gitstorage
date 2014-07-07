@@ -26,7 +26,7 @@ from . import validators
 
 
 class BaseObjectMetadata(models.Model):
-    oid = models.CharField(_("oid"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
+    id = models.CharField(_("id"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
     mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
 
     class Meta:
@@ -39,14 +39,14 @@ class TreeMetadata(BaseObjectMetadata):
         managed = False
 
     def __unicode__(self):
-        return "{0.oid}".format(self)
+        return "{0.id}".format(self)
 
 
 class BlobMetadataManager(models.Manager):
 
-    def create_from_name(self, name, oid, **kwargs):
+    def create_from_name(self, name, id, **kwargs):
         mimetype = mimetypes.guess_type(name)[0]
-        return self.create(oid=oid, mimetype=mimetype, **kwargs)
+        return self.create(id=id, mimetype=mimetype, **kwargs)
 
     def create_from_content(self):
         # Could "file -i" the blob content
@@ -62,7 +62,7 @@ class BlobMetadata(BaseObjectMetadata):
         verbose_name_plural = _("blob metadata")
 
     def __unicode__(self):
-        return "{0.oid} type={0.mimetype}".format(self)
+        return "{0.id} type={0.mimetype}".format(self)
 
 
 class TreePermissionManager(models.Manager):

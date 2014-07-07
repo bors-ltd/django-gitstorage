@@ -45,7 +45,7 @@ class Repository(pygit2.Repository):
         super(Repository, self).__init__(*args)
         assert self.is_bare
         # Always load the index
-        self.index.read_tree(self.tree.oid)
+        self.index.read_tree(self.tree.id)
 
     @property
     def commit(self):
@@ -64,7 +64,7 @@ class Repository(pygit2.Repository):
         """
         # Fast path for blobs
         try:
-            return self[self.index[path].oid]
+            return self[self.index[path].id]
         except KeyError:
             # Tree traversal
             tree = self.tree
@@ -73,15 +73,15 @@ class Repository(pygit2.Repository):
             segments = path.split("/")
             name = segments.pop()
             for segment in segments:
-                tree = self[tree[segment].oid]
-            return self[tree[name].oid]
+                tree = self[tree[segment].id]
+            return self[tree[name].id]
 
     def insert(self, path, blob_oid):
         """Insert the blob at the given path name creating missing intermediate trees.
 
             @param path: file path, relative to the repository root
-            @param blob_oid: the blob oid already created
-            @return: new root tree oid to commit
+            @param blob_oid: the blob id already created
+            @return: new root tree id to commit
 
             Credits to Nico von Geyso (cholin) for the original code: https://github.com/libgit2/pygit2/pull/88/files
 
@@ -102,9 +102,9 @@ class Repository(pygit2.Repository):
                 # Found where to begin adding new objects
                 break
             segment = segments.pop()  # Remember path is reversed
-            current_tree = self[current_tree[segment].oid]
+            current_tree = self[current_tree[segment].id]
             # Append a draft version of the new tree
-            tree_stack.append((segment, self.TreeBuilder(current_tree.oid)))
+            tree_stack.append((segment, self.TreeBuilder(current_tree.id)))
 
         # Insert blob
         if segments:
@@ -147,7 +147,7 @@ class Repository(pygit2.Repository):
         """Remove the given path from the repository tree.
 
             @param path: file path, relative to the repository root
-            @return: new root tree oid to commit
+            @return: new root tree id to commit
 
             TODO git_index_remove would probably do the job if I could add an in-memory entry.
         """
@@ -162,8 +162,8 @@ class Repository(pygit2.Repository):
         tree_stack = [("/", root_tree_builder)]
         while segments:
             segment = segments.pop()  # Remember path is reversed
-            current_tree = self[current_tree[segment].oid]
-            tree_stack.append((segment, self.TreeBuilder(current_tree.oid)))
+            current_tree = self[current_tree[segment].id]
+            tree_stack.append((segment, self.TreeBuilder(current_tree.id)))
 
         # Remove the blob
         child_segment, tmp_tree_builder = tree_stack.pop()

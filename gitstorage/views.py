@@ -69,7 +69,7 @@ class ObjectViewMixin(object):
         user = self.request.user
         allowed_names = models.TreePermission.objects.allowed_names(user, path)
 
-        # Don't use listdir to have direct access to the oid
+        # Don't use listdir to have direct access to the id
         directories = []
         for entry in tree:
             # Hide hidden files
@@ -81,7 +81,7 @@ class ObjectViewMixin(object):
                     directories.append({
                         'name': name,
                         'path': path.resolve(name),
-                        'metadata': models.TreeMetadata(oid=entry.hex),
+                        'metadata': models.TreeMetadata(id=entry.hex),
                     })
         return sorted(directories, key=operator.itemgetter('name'))
 
@@ -93,7 +93,7 @@ class ObjectViewMixin(object):
         if self.object.type is pygit2.GIT_OBJ_BLOB:
             self.metadata = models.BlobMetadata.objects.get(pk=self.object.hex)
         elif self.object.type is pygit2.GIT_OBJ_TREE:
-            self.metadata = models.TreeMetadata(oid=self.object.hex)
+            self.metadata = models.TreeMetadata(id=self.object.hex)
 
     def get_context_data(self, **kwargs):
         """Context variables for any type of Git object and on every page."""
@@ -197,25 +197,25 @@ class TreeViewMixin(ObjectViewMixin):
 
     def filter_files(self):
         # Always assume files are readable if the parent tree is
-        oid_to_name = {}
+        id_to_name = {}
         for entry in self.object:
             # Hide hidden files
             if entry.name[0] == ".":
                 continue
             if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
-                oid_to_name[entry.hex] = entry.name.decode(git_storage.GIT_FILESYSTEM_ENCODING)
+                id_to_name[entry.hex] = entry.name.decode(git_storage.GIT_FILESYSTEM_ENCODING)
 
         # Fetch metadata for all of the entries in a single query
         metadata = {}
-        for value in models.BlobMetadata.objects.filter(pk__in=oid_to_name.iterkeys()):
-            metadata[value.oid] = value
+        for value in models.BlobMetadata.objects.filter(pk__in=id_to_name.iterkeys()):
+            metadata[value.id] = value
 
         files = []
-        for oid, name in oid_to_name.iteritems():
+        for id, name in id_to_name.iteritems():
             files.append({
                 'name': name,
                 'path': self.path.resolve(name),
-                'metadata': metadata[oid],
+                'metadata': metadata[id],
             })
         return sorted(files, key=operator.itemgetter('name'))
 

@@ -36,7 +36,7 @@ class BlobMetadataManagerTestCase(TestCase):
 class BlobMetadataTestCase(TestCase):
 
     def setUp(self):
-        self.metadata = factories.BlobMetadataFactory(oid="c0d11342c4241087e3c126f7666d618586e39068",
+        self.metadata = factories.BlobMetadataFactory(id="c0d11342c4241087e3c126f7666d618586e39068",
                                                       mimetype="image/jpeg")
 
     def test_unicode(self):
@@ -46,7 +46,7 @@ class BlobMetadataTestCase(TestCase):
 class TreeMetadataTestCase(TestCase):
 
     def setUp(self):
-        self.metadata = factories.TreeMetadataFactory.build(oid="c0d11342c4241087e3c126f7666d618586e39068")
+        self.metadata = factories.TreeMetadataFactory.build(id="c0d11342c4241087e3c126f7666d618586e39068")
 
     def test_unicode(self):
         self.assertEqual(unicode(self.metadata), "c0d11342c4241087e3c126f7666d618586e39068")

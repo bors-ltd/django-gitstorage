@@ -77,7 +77,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         self.assertEqual("Saved by Git Storage", commit.message)
         tree = commit.tree
         self.assertItemsEqual([name], ls_tree(tree))
-        blob = self.storage.repository[tree[name].oid]
+        blob = self.storage.repository[tree[name].id]
         self.assertEqual("foo", blob.data)
 
     def test_save_subdir(self):
@@ -89,7 +89,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         # Introspect commit
         tree = self.storage.repository.find_object("foo/bar/baz")
         self.assertItemsEqual(["qux.txt"], ls_tree(tree))
-        blob = self.storage.repository[tree["qux.txt"].oid]
+        blob = self.storage.repository[tree["qux.txt"].id]
         self.assertEqual("qux", blob.data)
 
     def test_open_unknown(self):
@@ -131,7 +131,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         repository = self.storage.repository
         self.assertEqual(self.storage.location, self.location)
         self.assertEqual('d104ab48cc867e89928e0094d192e5516a98dd25', repository.commit.hex)
-        self.assertTupleEqual((self.storage.reference,), repository.listall_references())
+        self.assertListEqual([self.storage.reference], repository.listall_references())
 
     def test_open_root(self):
         """Open a file at the root of the repository."""
@@ -172,15 +172,15 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.assertItemsEqual(["foo.txt", "foo", "path"], ls_tree(tree))
 
         # "foo/"
-        tree = self.storage.repository[tree["foo"].oid]
+        tree = self.storage.repository[tree["foo"].id]
         self.assertItemsEqual(["bar"], ls_tree(tree))
 
         # "foo/bar/"
-        tree = self.storage.repository[tree["bar"].oid]
+        tree = self.storage.repository[tree["bar"].id]
         self.assertItemsEqual(["toto.txt", "baz"], ls_tree(tree))
 
         # "foo/bar/baz"
-        tree = self.storage.repository[tree["baz"].oid]
+        tree = self.storage.repository[tree["baz"].id]
         self.assertItemsEqual(["qux.txt"], ls_tree(tree))
 
     def test_save_temporary_file(self):

@@ -115,7 +115,7 @@ class GitStorage(storage.Storage):
 
         # Open our repository instance
         self.repository = wrappers.Repository(self.location)
-        assert self.repository.status() == {}, "Repository must be clean"
+        assert self.repository.is_bare
 
     def _git_path(self, name):
         """Clean path name and make it relative to the repository root.
@@ -168,8 +168,8 @@ class GitStorage(storage.Storage):
         """Commit the given tree using this commit message.
 
             @param message: unicode message
-            @param tree: tree oid
-            @return: commit oid
+            @param tree: tree id
+            @return: commit id
         """
         tz = timezone.get_current_timezone()
         self.repository.create_commit(self.reference,
