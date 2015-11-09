@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-04-14 22:14+0200\n"
+"POT-Creation-Date: 2015-11-09 17:04+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,30 +17,38 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: models.py:25
+#: forms.py:34 forms.py:42
+msgid "Users"
+msgstr "Utilisateurs"
+
+#: forms.py:50
+msgid "File"
+msgstr "Fichier"
+
+#: models.py:27
 msgid "id"
 msgstr "id"
 
-#: models.py:26
+#: models.py:28
 msgid "mimetype"
 msgstr "type mime"
 
-#: models.py:31 models.py:32
+#: models.py:59 models.py:60
 msgid "blob metadata"
 msgstr "métadonnées"
 
-#: models.py:68
+#: models.py:96
 msgid "parent path"
 msgstr "parent"
 
-#: models.py:70
+#: models.py:98
 msgid "name"
 msgstr "nom"
 
-#: models.py:77
+#: models.py:105
 msgid "tree permission"
 msgstr "permission"
 
-#: models.py:78
+#: models.py:106
 msgid "tree permissions"
 msgstr "permissions"
