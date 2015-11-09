@@ -125,6 +125,6 @@ GitStorage uses South.
 License
 -------
 
-GitStorage is copyright Bors Ltd with ideas from the PyGit2 project.
+GitStorage is copyright Bors LTD with ideas from the PyGit2 project.
 
 GitStorage is published under the GNU General Public License version 3.
