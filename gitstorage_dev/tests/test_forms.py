@@ -16,9 +16,8 @@
 
 from django.test import TestCase
 
-from gitstorage.tests import factories
-
-from .. import forms
+from gitstorage import factories
+from gitstorage import forms
 
 
 class UsersChoiceFieldTestCase(TestCase):

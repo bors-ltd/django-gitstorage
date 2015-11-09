@@ -21,7 +21,7 @@ from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
 from django.test import TestCase
 
-from ..storage import GitStorage
+from gitstorage.storage import GitStorage
 from .utils import NewRepositoryMixin, VanillaRepositoryMixin
 
 

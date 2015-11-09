@@ -14,5 +14,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
-# Importing for code coverage and test registering
-from .. import admin
+from django.test import TestCase
+
+from gitstorage import factories
+
+
+class UserFactoryTestCase(TestCase):
+
+    def test_password(self):
+        user = factories.UserFactory(password="passwd")
+        self.assertTrue(user.check_password("passwd"))
+        self.assertFalse(user.check_password("password"))

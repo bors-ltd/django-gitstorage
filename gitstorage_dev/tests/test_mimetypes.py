@@ -16,7 +16,7 @@
 
 from django.test import TestCase
 
-from .. import mimetypes
+from gitstorage import mimetypes
 
 
 class MimetypesTestCase(TestCase):

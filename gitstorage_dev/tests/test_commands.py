@@ -18,7 +18,8 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 
-from .. import models
+from gitstorage import models
+
 from .utils import VanillaRepositoryMixin
 
 

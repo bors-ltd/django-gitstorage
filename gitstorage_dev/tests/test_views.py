@@ -25,12 +25,13 @@ from django.test.client import RequestFactory
 
 import pygit2
 
-from . import factories
+from gitstorage import factories
+from gitstorage import models
+from gitstorage import storage
+from gitstorage.utils import Path
+
 from . import views
 from .utils import VanillaRepositoryMixin
-from .. import models
-from .. import storage
-from ..utils import Path
 
 
 class PreviewViewTestCase(VanillaRepositoryMixin, TestCase):

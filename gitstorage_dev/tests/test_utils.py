@@ -16,7 +16,7 @@
 
 from django.test import TestCase
 
-from ..utils import Path
+from gitstorage.utils import Path
 
 
 class PathTestCase(TestCase):

@@ -21,7 +21,7 @@ import factory
 from django.contrib.auth import models as auth_models
 from django.utils.crypto import get_random_string
 
-from .. import models
+from gitstorage import models
 
 
 class AnonymousUserFactory(factory.Factory):

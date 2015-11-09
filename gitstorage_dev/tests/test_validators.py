@@ -17,7 +17,7 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from .. import validators
+from gitstorage import validators
 
 
 class PathValidatorTestCase(TestCase):

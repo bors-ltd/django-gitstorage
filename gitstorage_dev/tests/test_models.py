@@ -16,9 +16,9 @@
 
 from django.test.testcases import TestCase
 
-from .. import models
-from .. import utils
-from . import factories
+from gitstorage import factories
+from gitstorage import models
+from gitstorage import utils
 
 
 class BlobMetadataManagerTestCase(TestCase):

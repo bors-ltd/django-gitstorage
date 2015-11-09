@@ -6,7 +6,5 @@
 README.html
 dist/
 django_gitstorage.egg-info/
-gitstorage/tests/checkout/
+gitstorage_dev/tests/checkout/
 htmlcov/
-libgit2
-pygit2

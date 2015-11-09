@@ -19,7 +19,7 @@ from django.views import generic
 
 import pygit2
 
-from .. import views
+from gitstorage import views
 
 
 class TestViewMixin(object):
