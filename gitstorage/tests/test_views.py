@@ -1,20 +1,18 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013 Bors Ltd
+# Copyright Bors LTD
 # This file is part of django-gitstorage.
 #
-#    django-gitstorage is free software: you can redistribute it and/or modify
+#    Django-gitstorage is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
-#    Foobar is distributed in the hope that it will be useful,
+#    Django-gitstorage is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import absolute_import, print_function, unicode_literals
+#    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
 import types
 
@@ -24,7 +22,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http.response import Http404
 from django.test import TestCase
 from django.test.client import RequestFactory
-from django.test.utils import override_settings
 
 import pygit2
 
@@ -50,8 +47,8 @@ class PreviewViewTestCase(VanillaRepositoryMixin, TestCase):
     def test_preview(self):
         self.view.request = RequestFactory().get(self.view.path)
         response = self.view.get(self.view.request)
-        self.assertEqual(response['Content-Disposition'], "inline; filename=dépôt.txt".encode('latin1'))
-        self.assertContains(response, "de\u0301po\u0302t".encode('utf8'))
+        self.assertEqual(response['Content-Disposition'], "inline; filename=dépôt.txt")
+        self.assertContains(response, "de\u0301po\u0302t")
 
 
 class DownloadViewTestCase(VanillaRepositoryMixin, TestCase):
@@ -68,8 +65,8 @@ class DownloadViewTestCase(VanillaRepositoryMixin, TestCase):
     def test_download(self):
         self.view.request = RequestFactory().get(self.view.path)
         response = self.view.get(self.view.request)
-        self.assertEqual(response['Content-Disposition'], "attachment; filename=dépôt.txt".encode('latin1'))
-        self.assertContains(response, "de\u0301po\u0302t".encode('utf8'))
+        self.assertEqual(response['Content-Disposition'], "attachment; filename=dépôt.txt")
+        self.assertContains(response, "de\u0301po\u0302t")
 
 
 class DeleteViewTestCase(VanillaRepositoryMixin, TestCase):
@@ -191,12 +188,10 @@ class ShareViewTestCase(VanillaRepositoryMixin, TestCase):
         self.assertContains(response, "invalid")
 
 
-@override_settings()
 class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
 
     def setUp(self):
         super(BlobObjectViewTestCase, self).setUp()
-        settings.GIT_STORAGE_ROOT = self.location
         self.storage = storage.GitStorage()
         self.view = views.TestBlobObjectView()
         self.view.storage = self.storage
@@ -256,12 +251,10 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
         self.assertRaises(Http404, self.view.dispatch, self.view.request, "toto/coin")
 
 
-@override_settings()
 class TreeObjectViewTestCase(VanillaRepositoryMixin, TestCase):
 
     def setUp(self):
         super(TreeObjectViewTestCase, self).setUp()
-        settings.GIT_STORAGE_ROOT = self.location
         self.storage = storage.GitStorage()
         self.view = views.TestTreeObjectView()
         self.view.storage = self.storage
@@ -394,12 +387,10 @@ class AdminPermissionTestCase(TestCase):
         self.assertRaises(views.StubValue, self.view.check_permissions)
 
 
-@override_settings()
 class RepositoryViewTestCase(VanillaRepositoryMixin, TestCase):
 
     def setUp(self):
         super(RepositoryViewTestCase, self).setUp()
-        settings.GIT_STORAGE_ROOT = self.location
         self.view_class = views.TestRepositoryView
         self.view = self.view_class.as_view()
         self.request = RequestFactory().request()

@@ -1,20 +1,18 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013 Bors Ltd
+# Copyright Bors LTD
 # This file is part of django-gitstorage.
 #
-#    django-gitstorage is free software: you can redistribute it and/or modify
+#    Django-gitstorage is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
-#    Foobar is distributed in the hope that it will be useful,
+#    Django-gitstorage is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import absolute_import, print_function, unicode_literals
+#    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import update_wrapper
 import logging
@@ -75,14 +73,15 @@ class ObjectViewMixin(object):
             # Hide hidden files
             if entry.name[0] == ".":
                 continue
-            if entry.filemode == wrappers.GIT_FILEMODE_TREE:
-                name = entry.name.decode(git_storage.GIT_FILESYSTEM_ENCODING)
-                if allowed_names is None or name in allowed_names:
-                    directories.append({
-                        'name': name,
-                        'path': path.resolve(name),
-                        'metadata': models.TreeMetadata(id=entry.hex),
-                    })
+            if entry.filemode != wrappers.GIT_FILEMODE_TREE:
+                continue
+            if allowed_names is not None and entry.name not in allowed_names:
+                continue
+            directories.append({
+                'name': entry.name,
+                'path': path.resolve(entry.name),
+                'metadata': models.TreeMetadata(id=entry.hex),
+            })
         return sorted(directories, key=operator.itemgetter('name'))
 
     def load_metadata(self):
@@ -203,15 +202,15 @@ class TreeViewMixin(ObjectViewMixin):
             if entry.name[0] == ".":
                 continue
             if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
-                id_to_name[entry.hex] = entry.name.decode(git_storage.GIT_FILESYSTEM_ENCODING)
+                id_to_name[entry.hex] = entry.name
 
         # Fetch metadata for all of the entries in a single query
         metadata = {}
-        for value in models.BlobMetadata.objects.filter(pk__in=id_to_name.iterkeys()):
+        for value in models.BlobMetadata.objects.filter(pk__in=id_to_name.keys()):
             metadata[value.id] = value
 
         files = []
-        for id, name in id_to_name.iteritems():
+        for id, name in id_to_name.items():
             files.append({
                 'name': name,
                 'path': self.path.resolve(name),
@@ -244,11 +243,11 @@ class UploadViewMixin(TreeViewMixin):
 class SharesViewMixin(TreeViewMixin):
     form_class = forms.RemoveUsersForm
 
-    def get_form(self, form_class):
+    def get_form(self):
         current_permissions = models.TreePermission.objects.current_permissions(self.path)
         current_user_ids = current_permissions.values_list('user', flat=True)
 
-        return form_class(current_user_ids, **self.get_form_kwargs())
+        return self.get_form_class()(current_user_ids, **self.get_form_kwargs())
 
     def form_valid(self, form):
         users = form.cleaned_data['users']
@@ -260,11 +259,11 @@ class SharesViewMixin(TreeViewMixin):
 class ShareViewMixin(TreeViewMixin):
     form_class = forms.AddUsersForm
 
-    def get_form(self, form_class):
+    def get_form(self):
         current_permissions = models.TreePermission.objects.current_permissions(self.path)
         current_user_ids = current_permissions.values_list('user', flat=True)
 
-        return form_class(current_user_ids, **self.get_form_kwargs())
+        return self.get_form_class()(current_user_ids, **self.get_form_kwargs())
 
     def form_valid(self, form):
         users = form.cleaned_data['users']

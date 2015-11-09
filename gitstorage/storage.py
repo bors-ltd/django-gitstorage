@@ -1,27 +1,22 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013 Bors Ltd
+# Copyright Bors LTD
 # This file is part of django-gitstorage.
 #
-#    django-gitstorage is free software: you can redistribute it and/or modify
+#    Django-gitstorage is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
-#    Foobar is distributed in the hope that it will be useful,
+#    Django-gitstorage is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import absolute_import, print_function, unicode_literals
+#    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
-from cStringIO import StringIO
+from io import BytesIO
 import os
-try:
-    from urllib.parse import urljoin
-except ImportError:     # Python 2
-    from urlparse import urljoin
+from urllib.parse import urljoin
 
 from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.core.files import storage, File
@@ -41,9 +36,6 @@ DEFAULT_AUTHOR = ("Git Storage", "git@storage")
 INITIAL_COMMIT_MESSAGE = "Initial commit by Git Storage"
 DEFAULT_SAVE_MESSAGE = "Saved by Git Storage"
 DEFAULT_DELETE_MESSAGE = "Deleted by Git Storage"
-
-# Always encode tree entry names to UTF-8
-GIT_FILESYSTEM_ENCODING = 'utf8'
 
 
 class GitStorage(storage.Storage):
@@ -132,8 +124,7 @@ class GitStorage(storage.Storage):
         path = os.path.normpath(path)
         # Strip off the repo absolute path
         path = path[len(self.location) + 1:]
-        # PyGit2 still uses bytestrings for filesystem paths on Python 2
-        return path.encode(GIT_FILESYSTEM_ENCODING)
+        return path
 
     def _open(self, name, mode='rb'):
         """Open the given file name, always in 'rb' mode.
@@ -145,7 +136,7 @@ class GitStorage(storage.Storage):
             raise ImproperlyConfigured("Can't rewrite Git files, just save on the same path")
         path = self._git_path(name)
         blob = self.repository.find_object(path)
-        return File(StringIO(blob.data), name=name)
+        return File(BytesIO(blob.data), name=name)
 
     def _save(self, name, content):
         """Save the File content under the given path name.
@@ -167,7 +158,7 @@ class GitStorage(storage.Storage):
     def _commit(self, message, tree):
         """Commit the given tree using this commit message.
 
-            @param message: unicode message
+            @param message: text message
             @param tree: tree id
             @return: commit id
         """
@@ -218,9 +209,9 @@ class GitStorage(storage.Storage):
         directories, files = [], []
         for entry in tree:
             if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
-                files.append(entry.name.decode(GIT_FILESYSTEM_ENCODING))
+                files.append(entry.name)
             elif entry.filemode == wrappers.GIT_FILEMODE_TREE:
-                directories.append(entry.name.decode(GIT_FILESYSTEM_ENCODING))
+                directories.append(entry.name)
         return directories, files
 
     def size(self, name):

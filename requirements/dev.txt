@@ -1,9 +1,7 @@
 -r ../requirements.txt
-coverage==3.6
-distribute==0.6.36
-django-discover-runner==0.4
-docutils==0.10
-factory_boy==2.0.2
-ipdb==0.7
-ipython==0.13.2
-wsgiref==0.1.2
+coverage
+django-discover-runner
+docutils
+factory_boy
+ipdb
+ipython

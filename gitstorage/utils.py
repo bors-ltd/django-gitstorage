@@ -1,22 +1,21 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013 Bors Ltd
+# Copyright Bors LTD
 # This file is part of django-gitstorage.
 #
-#    django-gitstorage is free software: you can redistribute it and/or modify
+#    Django-gitstorage is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
-#    Foobar is distributed in the hope that it will be useful,
+#    Django-gitstorage is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import absolute_import, print_function, unicode_literals
+#    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import sys
 
 import pygit2
 
@@ -37,20 +36,20 @@ def make_signature(name, email, tz=None):
         @return: pygit2.Signature()
     """
     now = datetime.datetime.utcnow()
-    timestamp = int((now - EPOCH).total_seconds())  # XXX Python 2.7
+    timestamp = int((now - EPOCH).total_seconds())
     # Offset in minutes
     offset = int(tz.utcoffset(now).total_seconds() // 60) if tz else 0
-    return pygit2.Signature(name,
-                            email,
-                            timestamp,
-                            offset)
+    return pygit2.Signature(name, email, timestamp, offset)
 
 
-class Path(unicode):
+class Path(str):
     parent_path = None
     name = None
 
     def __new__(cls, path):
+        if isinstance(path,bytes):
+            path = path.decode(sys.getfilesystemencoding())
+
         # Filter out leading and trailing "/"
         segments = [segment for segment in path.split("/") if segment]
 
@@ -64,7 +63,7 @@ class Path(unicode):
         # Reconstruct the cleaned path
         if name:
             segments.append(name)
-        path = unicode.__new__(cls,  "/".join(segments))
+        path = str.__new__(cls,  "/".join(segments))
 
         # Attach properties
         path.parent_path = parent_path
@@ -74,7 +73,7 @@ class Path(unicode):
 
     def resolve(self, name):
         """Join the path and a name, always with "/" for Git."""
-        if isinstance(name, str):
+        if isinstance(name, bytes):
             name = name.decode('utf8')
         if self:
             return self + "/" + name

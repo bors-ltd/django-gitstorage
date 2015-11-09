@@ -3,7 +3,12 @@ PACKAGE=gitstorage
 all:
 
 clean:
-	find $(PACKAGE) "(" -name "*.pyc" -or -name "*.mo" ")" -delete
+	find $(PACKAGE) "(" -name "*.pyc" -or -name "*.pyo" -or -name "*.mo" -or -name "*.so" ")" -delete
+	find $(PACKAGE) -type d -empty -delete
+	find $(PACKAGE) -name __pycache__ -delete
+	find $(PACKAGE)_dev "(" -name "*.pyc" -or -name "*.pyo" -or -name "*.mo" -or -name "*.so" ")" -delete
+	find $(PACKAGE)_dev -type d -empty -delete
+	find $(PACKAGE)_dev -name __pycache__ -delete
 
 docs:
 	rst2html.py README.rst > README.html
