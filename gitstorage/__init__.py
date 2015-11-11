@@ -9,3 +9,6 @@ __license__ = "GPL3"
 
 __version__ = "1.1.0"
 VERSION = tuple(__version__.split("."))
+
+
+default_app_config = 'gitstorage.apps.GitStorageConfig'

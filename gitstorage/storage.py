@@ -18,6 +18,7 @@ from io import BytesIO
 import os
 from urllib.parse import urljoin
 
+from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.core.files import storage, File
 from django.conf import settings
@@ -29,11 +30,7 @@ import pygit2
 from . import wrappers
 
 
-DEFAULT_REFERENCE = 'refs/heads/master'
-DEFAULT_AUTHOR = ("Git Storage", "git@storage")
-INITIAL_COMMIT_MESSAGE = "Initial commit by Git Storage"
-DEFAULT_SAVE_MESSAGE = "Saved by Git Storage"
-DEFAULT_DELETE_MESSAGE = "Deleted by Git Storage"
+app_config = apps.get_app_config('gitstorage')
 
 
 class GitStorage(storage.Storage):
@@ -58,52 +55,9 @@ class GitStorage(storage.Storage):
                 base_url = None
         self.base_url = base_url
 
-        # Reference (head)
-        try:
-            self.reference_name = settings.GIT_STORAGE_REFERENCE
-        except AttributeError:
-            self.reference_name = DEFAULT_REFERENCE
-
-        # Author
-        try:
-            self.author_name, self.author_email = settings.GIT_STORAGE_AUTHOR
-        except AttributeError:
-            self.author_name, self.author_email = DEFAULT_AUTHOR
-
-        # Committer
-        try:
-            self.committer_name, self.committer_email = settings.GIT_STORAGE_COMMITTER
-        except AttributeError:
-            self.committer_name, self.committer_email = DEFAULT_AUTHOR
-
-        # Save message
-        try:
-            self.save_message = settings.GIT_STORAGE_SAVE_MESSAGE
-        except AttributeError:
-            self.save_message = DEFAULT_SAVE_MESSAGE
-
-        # Delete message
-        try:
-            self.delete_message = settings.GIT_STORAGE_DELETE_MESSAGE
-        except AttributeError:
-            self.delete_message = DEFAULT_DELETE_MESSAGE
-
         # Create the repository
         if not os.path.exists(location):
-            repository = pygit2.init_repository(self.location, bare=True)
-            # Initial commit
-            author = pygit2.Signature(self.author_name, self.author_email)
-            committer = pygit2.Signature(self.committer_name, self.committer_email)
-            tree = repository.TreeBuilder().write()
-            repository.create_commit(
-                self.reference_name,
-                author,
-                committer,
-                INITIAL_COMMIT_MESSAGE,
-                tree,
-                [],
-            )
-            del repository
+            self._create()
 
         # Open the repository with our class
         self.repository = wrappers.Repository(self.location)
@@ -117,14 +71,27 @@ class GitStorage(storage.Storage):
             @param name: file path, relative to the repository root
             @return: cleaned path
         """
-        try:
-            path = safe_join(self.location, name)
-        except ValueError:
-            raise SuspiciousOperation("Attempted access to '%s' denied." % name)
+        path = safe_join(self.location, name)
         path = os.path.normpath(path)
         # Strip off the repo absolute path
         path = path[len(self.location) + 1:]
         return path
+
+    def _create(self):
+        repository = pygit2.init_repository(self.location, bare=True)
+
+        # Initial commit
+        author = pygit2.Signature(app_config.AUTHOR[0], app_config.AUTHOR[1])
+        committer = pygit2.Signature(app_config.COMMITTER[0], app_config.COMMITTER[1])
+        tree = repository.TreeBuilder().write()
+        repository.create_commit(
+            app_config.REFERENCE_NAME,
+            author,
+            committer,
+            app_config.INITIAL_COMMIT_MESSAGE,
+            tree,
+            [],
+        )
 
     def _open(self, name, mode='rb'):
         """Open the given file name, always in 'rb' mode.
@@ -137,6 +104,22 @@ class GitStorage(storage.Storage):
         path = self._git_path(name)
         blob = self.repository.peel(path)
         return File(BytesIO(blob.data), name=name)
+
+    def _commit(self, message, tree):
+        """Commit the given tree using this commit message.
+
+            @param message: text message
+            @param tree: tree id
+            @return: commit id
+        """
+        self.repository.create_commit(
+            self.repository.head.name,
+            pygit2.Signature(app_config.AUTHOR[0], app_config.AUTHOR[1]),
+            pygit2.Signature(app_config.COMMITTER[0], app_config.COMMITTER[1]),
+            message,
+            tree,
+            [self.repository.head.target],
+        )
 
     def _save(self, name, content):
         """Save the File content under the given path name.
@@ -152,24 +135,8 @@ class GitStorage(storage.Storage):
         else:
             blob = self.repository.create_blob(content.read())
         tree = self.repository.insert(path, blob)
-        self._commit(self.save_message, tree)
+        self._commit(app_config.SAVE_MESSAGE, tree)
         return name
-
-    def _commit(self, message, tree):
-        """Commit the given tree using this commit message.
-
-            @param message: text message
-            @param tree: tree id
-            @return: commit id
-        """
-        self.repository.create_commit(
-            self.repository.head.name,
-            pygit2.Signature(self.author_name, self.author_email),
-            pygit2.Signature(self.committer_name, self.committer_email),
-            message,
-            tree,
-            [self.repository.head.target],
-        )
 
     def delete(self, name):
         """Delete the blob at the given path name by committing a tree without it.
@@ -178,7 +145,7 @@ class GitStorage(storage.Storage):
         """
         path = self._git_path(name)
         tree = self.repository.remove(path)
-        self._commit(self.delete_message, tree)
+        self._commit(app_config.DELETE_MESSAGE, tree)
 
     def get_available_name(self, name):
         """Always allow to overwrite an existing name.

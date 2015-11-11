@@ -41,7 +41,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         self.assertTrue(path.exists(self.location))
         self.assertEqual(self.storage.location, self.location)
         self.assertIsNotNone(repository.commit)
-        self.assertIn(self.storage.reference_name, repository.listall_references())
+        self.assertListEqual(['refs/heads/master'], repository.listall_references())  # apps default
 
         # Introspect commit
         commit = repository.commit
@@ -125,7 +125,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         repository = self.storage.repository
         self.assertEqual(self.storage.location, self.location)
         self.assertEqual('d104ab48cc867e89928e0094d192e5516a98dd25', repository.commit.hex)
-        self.assertListEqual([self.storage.reference_name], repository.listall_references())
+        self.assertListEqual(['refs/heads/master'], repository.listall_references())  # apps default
 
     def test_open_root(self):
         """Open a file at the root of the repository."""
