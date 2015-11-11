@@ -129,7 +129,7 @@ class ObjectViewMixin(object):
 
         if not git_obj:
             try:
-                git_obj = self.storage.repository.peel(path)
+                git_obj = self.storage.repository.open(path)
             except KeyError:
                 raise Http404()
 
@@ -234,7 +234,7 @@ class UploadViewMixin(TreeViewMixin):
         self.storage.save(path, f)
 
         # Sync metadata
-        blob = self.storage.repository.peel(path)
+        blob = self.storage.repository.open(path)
         models.BlobMetadata.objects.create_from_name(f.name, blob.hex)
 
         return super(UploadViewMixin, self).form_valid(form)
@@ -320,7 +320,7 @@ class RepositoryView(ObjectViewMixin, generic_views.View):
                 raise Http404()
 
             try:
-                git_obj = kwargs['git_obj'] = storage.repository.peel(path)
+                git_obj = kwargs['git_obj'] = storage.repository.open(path)
             except KeyError:
                 raise Http404()
 

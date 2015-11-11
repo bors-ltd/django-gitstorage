@@ -84,7 +84,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         self.assertEqual(name, ret)
 
         # Introspect commit
-        tree = self.storage.repository.peel("foo/bar/baz")
+        tree = self.storage.repository.open("foo/bar/baz")
         self.assertListEqual(["qux.txt"], ls_tree(tree))
         blob = self.storage.repository[tree["qux.txt"].id]
         self.assertEqual(b"qux", blob.data)

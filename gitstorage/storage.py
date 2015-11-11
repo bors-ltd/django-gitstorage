@@ -102,7 +102,7 @@ class GitStorage(storage.Storage):
         if mode != 'rb':
             raise ImproperlyConfigured("Can't rewrite Git files, just save on the same path")
         path = self._git_path(name)
-        blob = self.repository.peel(path)
+        blob = self.repository.open(path)
         return File(BytesIO(blob.data), name=name)
 
     def _commit(self, message, tree):
@@ -169,7 +169,7 @@ class GitStorage(storage.Storage):
             @return: ([], []) directories and files
         """
         path = self._git_path(path)
-        tree = self.repository.peel(path)
+        tree = self.repository.open(path)
         directories, files = [], []
         for entry in tree:
             if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
@@ -184,7 +184,7 @@ class GitStorage(storage.Storage):
             @param: name: file path, relative to the repository root
         """
         path = self._git_path(name)
-        blob = self.repository.peel(path)
+        blob = self.repository.open(path)
         return blob.size
 
     def url(self, name):

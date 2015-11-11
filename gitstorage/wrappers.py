@@ -52,8 +52,11 @@ class Repository(pygit2.Repository):
         """shortcut to the head tree"""
         return self.head.peel(pygit2.GIT_OBJ_TREE)
 
-    def peel(self, path):
-        """High-level object retriever"""
+    def open(self, path):
+        """High-level object retriever.
+
+            @param path: file path, relative to the repository root
+        """
 
         # Repository root
         if path in ("", "/"):
