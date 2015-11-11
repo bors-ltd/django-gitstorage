@@ -16,22 +16,21 @@
 
 import types
 
-from django.conf import settings
+import pygit2
+
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http.response import Http404
 from django.test import TestCase
 from django.test.client import RequestFactory
 
-import pygit2
-
 from gitstorage import factories
 from gitstorage import models
 from gitstorage import storage
 from gitstorage.utils import Path
+from gitstorage.tests.utils import VanillaRepositoryMixin
 
 from . import views
-from .utils import VanillaRepositoryMixin
 
 
 class PreviewViewTestCase(VanillaRepositoryMixin, TestCase):

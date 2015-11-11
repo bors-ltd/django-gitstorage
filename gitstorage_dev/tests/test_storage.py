@@ -22,7 +22,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploaded
 from django.test import TestCase
 
 from gitstorage.storage import GitStorage
-from .utils import NewRepositoryMixin, VanillaRepositoryMixin
+from gitstorage.tests.utils import NewRepositoryMixin, VanillaRepositoryMixin
 
 
 def ls_tree(tree):
