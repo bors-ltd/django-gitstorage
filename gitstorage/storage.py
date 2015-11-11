@@ -42,9 +42,8 @@ class GitStorage(storage.Storage):
             @param location: path where to create and open the repository
         """
         if not location:
-            try:
-                location = settings.GIT_STORAGE_ROOT
-            except AttributeError:
+            location = getattr(settings, 'GIT_STORAGE_ROOT', "")
+            if not location:
                 raise ImproperlyConfigured("GIT_STORAGE_ROOT is required")
         self.base_location = location
         self.location = abspathu(self.base_location)
