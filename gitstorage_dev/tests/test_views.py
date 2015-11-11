@@ -390,7 +390,7 @@ class RepositoryViewTestCase(VanillaRepositoryMixin, TestCase):
 
     def setUp(self):
         super(RepositoryViewTestCase, self).setUp()
-        self.view_class = views.TestRepositoryView
+        self.view_class = views.TestBaseRepositoryView
         self.view = self.view_class.as_view()
         self.request = RequestFactory().request()
         self.request.user = factories.SuperUserFactory()

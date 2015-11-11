@@ -53,22 +53,22 @@ Views
 These views are designed as the foundation of class-based views like TemplateView and FormView,
 and your own business logic.
 
-RepositoryView
-""""""""""""""
+BaseRepositoryView
+""""""""""""""""""
 
 The main view that dispatches to a view dedicated to each Git object type (namely blob and tree).
 
-Not actually a mixin since it is functional but the dedicated views are mixins (see below).
+The view you will hook on your URL root, with configuring a view for each object type (see below).
 
 TreeViewMixin
 """""""""""""
 
-Default view for a tree, lists its contents.
+Default view for a tree object, lists its contents.
 
 BlobViewMixin
 """""""""""""
 
-Default view for a blob, displays its information.
+Default view for a blob object, displays its information.
 
 PreviewViewMixin
 """"""""""""""""

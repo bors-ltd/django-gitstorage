@@ -105,5 +105,5 @@ class TestAdminView(views.AdminPermissionMixin, StubPermissionMixin, generic.Vie
     pass
 
 
-class TestRepositoryView(views.RepositoryView):
+class TestBaseRepositoryView(views.BaseRepositoryView):
     pass

@@ -278,10 +278,10 @@ class AdminPermissionMixin(object):
         super(AdminPermissionMixin, self).check_permissions()
 
 
-class RepositoryView(ObjectViewMixin, generic_views.View):
+class BaseRepositoryView(ObjectViewMixin, generic_views.View):
     """Map URL path to the Git object at the same path, then return the dedicated view.
 
-    This is the only concrete class view, though useless without a configured "type_to_view_class".
+    This view is useless without a configured "type_to_view_class".
     """
 
     type_to_view_class = {
