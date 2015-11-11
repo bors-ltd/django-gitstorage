@@ -28,11 +28,6 @@ GIT_FILEMODE_BLOB_EXECUTABLE = 0o0100755
 GIT_FILEMODE_LINK = 0o0120000
 GIT_FILEMODE_COMMIT = 0o0160000
 
-GIT_FILEMODE_BLOB_KINDS = (
-    GIT_FILEMODE_BLOB,
-    GIT_FILEMODE_BLOB_EXECUTABLE,
-)
-
 
 class Repository(pygit2.Repository):
 
@@ -55,7 +50,7 @@ class Repository(pygit2.Repository):
     def open(self, path):
         """High-level object retriever.
 
-            @param path: file path, relative to the repository root
+            @param path: object path, relative to the repository root
         """
 
         # Repository root
@@ -68,7 +63,7 @@ class Repository(pygit2.Repository):
     def insert(self, path, blob_oid):
         """Insert the blob at the given path name creating missing intermediate trees.
 
-            @param path: file path, relative to the repository root
+            @param path: blob path, relative to the repository root
             @param blob_oid: the blob id already created
             @return: new root tree id to commit
 
@@ -79,7 +74,7 @@ class Repository(pygit2.Repository):
         root_tree_builder = self.TreeBuilder(self.tree)
         current_tree = self.tree
 
-        # Create directories hierarchy from last to first
+        # Create trees hierarchy from last to first
         segments = path.split("/")
         name = segments.pop()
         segments.reverse()

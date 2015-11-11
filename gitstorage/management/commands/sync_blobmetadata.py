@@ -17,27 +17,26 @@
 from django.core.management.base import NoArgsCommand
 
 from gitstorage import models
-from gitstorage import wrappers
 from gitstorage import storage as git_storage
 
 
 class Command(NoArgsCommand):
     help = "Compute metadata for new blobs"
 
-    def sync_tree(self, tree):
+    def sync_tree(self, repository, tree, known_blobs):
         for entry in tree:
-            if entry.filemode == wrappers.GIT_FILEMODE_TREE:
-                self.sync_tree(self.repository[entry.id])
-            elif entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
-                if entry.hex in self.known_blobs:
+            if entry.type == "tree":
+                self.sync_tree(repository, repository[entry.id], known_blobs)
+            elif entry.type == "blob":
+                if entry.hex in known_blobs:
                     continue
                 models.BlobMetadata.objects.create_from_name(entry.name, entry.hex)
-                self.known_blobs.add(entry.hex)
+                known_blobs.add(entry.hex)
 
     def handle_noargs(self, **options):
-        self.storage = git_storage.GitStorage()
-        self.repository = self.storage.repository
+        storage = git_storage.GitStorage()
+        repository = storage.repository
 
-        self.known_blobs = set(models.BlobMetadata.objects.values_list('id', flat=True))
+        known_blobs = set(models.BlobMetadata.objects.values_list('id', flat=True))
 
-        self.sync_tree(self.repository.tree)
+        self.sync_tree(repository, repository.tree, known_blobs)

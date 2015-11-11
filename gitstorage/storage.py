@@ -165,18 +165,20 @@ class GitStorage(storage.Storage):
     def listdir(self, path):
         """List the contents of the given path.
 
-            @param: path: directory path, relative to the repository root
-            @return: ([], []) directories and files
+            @param: path: tree path, relative to the repository root
+            @return: ([], []) trees and blobs
+
+        Contrary to a filesystem listdir, we expose tree entries, and keep the notion of blobs and trees.
         """
         path = self._git_path(path)
         tree = self.repository.open(path)
-        directories, files = [], []
+        trees, blobs = [], []
         for entry in tree:
-            if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
-                files.append(entry.name)
-            elif entry.filemode == wrappers.GIT_FILEMODE_TREE:
-                directories.append(entry.name)
-        return directories, files
+            if entry.type == "blob":
+                blobs.append(entry)
+            elif entry.type == "tree":
+                trees.append(entry)
+        return trees, blobs
 
     def size(self, name):
         """Return the size of the blob at the given path name.
@@ -192,19 +194,3 @@ class GitStorage(storage.Storage):
         if self.base_url is None:
             raise ValueError("This file is not accessible via a URL.")
         return urljoin(self.base_url, filepath_to_uri(path))
-
-    def is_dir(self, name):
-        """Return if the given name is a directory (Git tree).
-
-            @param: name: file path, relative to the repository root
-        """
-        path = self._git_path(name)
-        return self.repository.is_tree(path)
-
-    def is_file(self, name):
-        """Return if the given name is a file (Git blob).
-
-            @param: name: file path, relative to the repository root
-        """
-        path = self._git_path(name)
-        return self.repository.is_blob(path)

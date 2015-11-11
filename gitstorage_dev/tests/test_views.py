@@ -210,21 +210,20 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
     def test_check_permissions(self):
         self.assertRaises(NotImplementedError, self.view.check_permissions)
 
-    def test_filter_directories(self):
+    def test_filter_trees(self):
         parent_path = self.view.path.parent_path
-        tree = self.storage.repository.open(parent_path)
-        directories = list(self.view.filter_directories(tree, parent_path))
-        self.assertEqual(directories, [])
+        trees = list(self.view.filter_trees(parent_path))
+        self.assertEqual(trees, [])
 
     def test_get_context_data(self):
         self.maxDiff = None
         context = self.view.get_context_data()
-        context['root_directories'] = list(context['root_directories'])
+        context['root_trees'] = list(context['root_trees'])
         self.assertDictEqual(context, {
             'path': self.view.path,
             'object': self.view.object,
             'metadata': self.view.metadata,
-            'root_directories': [
+            'root_trees': [
                 {'name': "foo",
                  'path': "foo",
                  'metadata': models.TreeMetadata(id="2c58a3b070f4943b26efc8497bfb90bccd745648")},
@@ -272,9 +271,9 @@ class TreeObjectViewTestCase(VanillaRepositoryMixin, TestCase):
     def test_check_permissions(self):
         self.assertRaises(NotImplementedError, self.view.check_permissions)
 
-    def test_filter_directories(self):
-        directories = list(self.view.filter_directories(self.view.object, self.view.path))
-        self.assertEqual(directories, [])
+    def test_filter_trees(self):
+        trees = list(self.view.filter_trees(self.view.path))
+        self.assertEqual(trees, [])
 
     def test_dispatch(self):
         def check_permissions(self):
@@ -337,23 +336,23 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
                                         user=self.view.request.user)
         self.assertIsNone(self.view.check_permissions())
 
-    def test_filter_files(self):
+    def test_filter_blobs(self):
         metadata = factories.BlobMetadataFactory(id="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
 
-        files = list(self.view.filter_files())
-        self.assertEqual(files, [{'name': "qux.txt",
+        blobs = list(self.view.filter_blobs())
+        self.assertEqual(blobs, [{'name': "qux.txt",
                                   'path': "foo/bar/baz/qux.txt",
                                   'metadata': metadata}])
 
-    def test_filter_files_hidden(self):
+    def test_filter_blobs_hidden(self):
         self.view = views.TestTreeView()
         self.view.storage = self.storage
         self.view.path = Path("path/with/hidden")
         self.view.object = self.storage.repository.open(self.view.path)
         self.view.request = RequestFactory().request()
         self.view.request.user = factories.UserFactory()
-        files = list(self.view.filter_files())
-        self.assertEqual(files, [])
+        blobs = list(self.view.filter_blobs())
+        self.assertEqual(blobs, [])
 
     def test_get_context_data(self):
         metadata = factories.BlobMetadataFactory(id="100b0dec8c53a40e4de7714b2c612dad5fad9985", mimetype="text/plain")
@@ -364,11 +363,11 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
             'path': self.view.path,
             'object': self.view.object,
             'metadata': self.view.metadata,
-            'root_directories': [],  # Access to nothing
+            'root_trees': [],  # Access to nothing
             'breadcrumbs': ["foo", "foo/bar", "foo/bar/baz"],
             # Specific part
-            'directories': [],
-            'files': [{'name': "qux.txt",
+            'trees': [],
+            'blobs': [{'name': "qux.txt",
                        'path': "foo/bar/baz/qux.txt",
                        'metadata': metadata}]})
 

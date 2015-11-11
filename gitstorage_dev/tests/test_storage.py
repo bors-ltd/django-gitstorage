@@ -52,7 +52,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         path = self.storage._git_path(name)
         self.assertEqual(name, path)
 
-    def test_path_subdir(self):
+    def test_path_subtree(self):
         name = "foo/bar/baz/qux.txt"
         path = self.storage._git_path(name)
         self.assertEqual(name, path)
@@ -77,7 +77,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         blob = self.storage.repository[tree[name].id]
         self.assertEqual(b"foo", blob.data)
 
-    def test_save_subdir(self):
+    def test_save_subtree(self):
         name = "foo/bar/baz/qux.txt"
         content = SimpleUploadedFile(name, b'qux')
         ret = self.storage._save(name, content)
@@ -128,16 +128,16 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.assertListEqual(['refs/heads/master'], repository.listall_references())  # apps default
 
     def test_open_root(self):
-        """Open a file at the root of the repository."""
-        content = self.storage._open("foo.txt")
-        self.assertEqual("foo.txt", content.name)
-        self.assertEqual(b"foo\n", content.read())
+        """Open a blob at the root of the repository."""
+        blob = self.storage._open("foo.txt")
+        self.assertEqual("foo.txt", blob.name)
+        self.assertEqual(b"foo\n", blob.read())
 
-    def test_open_subdir(self):
-        """Open a file in a subdirectory."""
-        content = self.storage._open("foo/bar/baz/qux.txt")
-        self.assertEqual("foo/bar/baz/qux.txt", content.name)
-        self.assertEqual(b"qux\n", content.read())
+    def test_open_subtree(self):
+        """Open a blob in a subtree."""
+        blob = self.storage._open("foo/bar/baz/qux.txt")
+        self.assertEqual("foo/bar/baz/qux.txt", blob.name)
+        self.assertEqual(b"qux\n", blob.read())
 
     def test_open_write(self):
         self.assertRaises(ImproperlyConfigured, self.storage._open, "foo.txt", mode='wb')
@@ -149,14 +149,14 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         content = self.storage._open(name)
         self.assertEqual(b"toto", content.read())
 
-    def test_overwrite_subdir(self):
+    def test_overwrite_subtree(self):
         name = "foo/bar/baz/qux.txt"
         self.storage._save(name, SimpleUploadedFile(name, b'toto'))
 
         content = self.storage._open(name)
         self.assertEqual(b"toto", content.read())
 
-    def test_save_existing_subdir(self):
+    def test_save_existing_subtree(self):
         name = "foo/bar/toto.txt"
         self.storage._save(name, SimpleUploadedFile(name, b'toto'))
 
@@ -194,14 +194,14 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         tree = commit.tree
         self.assertListEqual(["foo", "path"], ls_tree(tree))
 
-    def test_delete_subdir(self):
+    def test_delete_subtree(self):
         name = "foo/bar/baz/qux.txt"
         self.storage.delete(name)
 
         # Introspect commit
         commit = self.storage.repository.commit
         tree = commit.tree
-        # Empty directory removed
+        # Empty tree removed
         self.assertListEqual(["foo.txt", "path"], ls_tree(tree))
 
     def test_exists(self):
@@ -209,19 +209,19 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.assertTrue(self.storage.exists("foo/bar/baz/qux.txt"))
 
     def test_listdir_root(self):
-        directories, files = self.storage.listdir(".")
-        self.assertListEqual(directories, ["foo", "path"])
-        self.assertListEqual(files, ["foo.txt"])
+        trees, blobs = self.storage.listdir(".")
+        self.assertListEqual([te.name for te in trees], ["foo", "path"])
+        self.assertListEqual([te.name for te in blobs], ["foo.txt"])
 
-    def test_listdir_subdir(self):
-        directories, files = self.storage.listdir("foo/bar/baz")
-        self.assertListEqual(directories, [])
-        self.assertListEqual(files, ["qux.txt"])
+    def test_listdir_subtree(self):
+        trees, blobs = self.storage.listdir("foo/bar/baz")
+        self.assertListEqual(trees, [])
+        self.assertListEqual([te.name for te in blobs], ["qux.txt"])
 
     def test_size_root(self):
         self.assertEqual(4, self.storage.size("foo.txt"))
 
-    def test_size_subdir(self):
+    def test_size_subtree(self):
         self.assertEqual(4, self.storage.size("foo/bar/baz/qux.txt"))
 
     def test_size_tree(self):
@@ -232,11 +232,3 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.storage = GitStorage(base_url="/mystorage/")
         self.assertEqual(self.storage.url("foo/bar/baz"), "/mystorage/foo/bar/baz")
         self.assertEqual(self.storage.url("foo/bar/baz/qux.txt"), "/mystorage/foo/bar/baz/qux.txt")
-
-    def test_is_dir(self):
-        self.assertTrue(self.storage.is_dir("foo/bar/baz"))
-        self.assertFalse(self.storage.is_dir("foo/bar/baz/qux.txt"))
-
-    def test_is_file(self):
-        self.assertTrue(self.storage.is_file("foo/bar/baz/qux.txt"))
-        self.assertFalse(self.storage.is_file("foo/bar/baz"))

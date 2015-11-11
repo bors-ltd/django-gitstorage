@@ -18,7 +18,7 @@
 class Path(str):
     """Path string that knows its path and name parts.
 
-    Think of dirname and basename.
+    Think of the shell's dirname and basename.
     """
     parent_path = None
     name = None

@@ -29,7 +29,6 @@ import pygit2
 from . import forms
 from . import models
 from . import storage as git_storage
-from . import wrappers
 from .utils import Path
 
 
@@ -58,31 +57,29 @@ class ObjectViewMixin(object):
         """Abstract, no implicit permission."""
         raise NotImplementedError()
 
-    def filter_directories(self, tree, path):
+    def filter_trees(self, path):
         """
         Filter tree entries of the given tree by permission allowance.
 
-        Should be in TreeViewMixin buy we want the root directories on every page.
+        Should be in TreeViewMixin buy we want the root trees on every page.
         """
         user = self.request.user
         allowed_names = models.TreePermission.objects.allowed_names(user, path)
+        filtered = []
 
-        # Don't use listdir to have direct access to the id
-        directories = []
-        for entry in tree:
+        trees, _blobs = self.storage.listdir(path)
+        for entry in trees:
             # Hide hidden files
             if entry.name[0] == ".":
                 continue
-            if entry.filemode != wrappers.GIT_FILEMODE_TREE:
-                continue
             if allowed_names is not None and entry.name not in allowed_names:
                 continue
-            directories.append({
+            filtered.append({
                 'name': entry.name,
                 'path': path.resolve(entry.name),
                 'metadata': models.TreeMetadata(id=entry.hex),
             })
-        return sorted(directories, key=operator.itemgetter('name'))
+        return sorted(filtered, key=operator.itemgetter('name'))
 
     def load_metadata(self):
         """Each object type has its own metadata model.
@@ -98,7 +95,7 @@ class ObjectViewMixin(object):
         """Context variables for any type of Git object and on every page."""
         context = super(ObjectViewMixin, self).get_context_data(**kwargs)
 
-        root_directories = self.filter_directories(self.storage.repository.tree, Path(""))
+        root_trees = self.filter_trees(Path(""))
 
         breadcrumbs = []
         path = self.path
@@ -109,7 +106,7 @@ class ObjectViewMixin(object):
         context['path'] = self.path
         context['object'] = self.object
         context['metadata'] = self.metadata
-        context['root_directories'] = root_directories
+        context['root_trees'] = root_trees
         context['breadcrumbs'] = breadcrumbs
         return context
 
@@ -184,7 +181,7 @@ class DeleteViewMixin(BlobViewMixin):
 
 
 class TreeViewMixin(ObjectViewMixin):
-    """View that applies only to trees (directories).
+    """View that applies only to trees.
 
     Permission is checked on the path itself.
     """
@@ -194,34 +191,34 @@ class TreeViewMixin(ObjectViewMixin):
         if not models.TreePermission.objects.is_allowed(self.request.user, self.path):
             raise PermissionDenied()
 
-    def filter_files(self):
+    def filter_blobs(self):
         # Always assume files are readable if the parent tree is
-        id_to_name = {}
+        hex_to_name = {}
         for entry in self.object:
             # Hide hidden files
             if entry.name[0] == ".":
                 continue
-            if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
-                id_to_name[entry.hex] = entry.name
+            if entry.type == "blob":
+                hex_to_name[entry.hex] = entry.name
 
         # Fetch metadata for all of the entries in a single query
         metadata = {}
-        for value in models.BlobMetadata.objects.filter(pk__in=id_to_name.keys()):
-            metadata[value.id] = value
+        for value in models.BlobMetadata.objects.filter(pk__in=hex_to_name.keys()):
+            metadata[value.pk] = value
 
-        files = []
-        for id, name in id_to_name.items():
-            files.append({
+        blobs = []
+        for hex, name in hex_to_name.items():
+            blobs.append({
                 'name': name,
                 'path': self.path.resolve(name),
-                'metadata': metadata[id],
+                'metadata': metadata[hex],
             })
-        return sorted(files, key=operator.itemgetter('name'))
+        return sorted(blobs, key=operator.itemgetter('name'))
 
     def get_context_data(self, **kwargs):
         context = super(TreeViewMixin, self).get_context_data(**kwargs)
-        context['directories'] = self.filter_directories(self.object, self.path)
-        context['files'] = self.filter_files()
+        context['trees'] = self.filter_trees(self.path)
+        context['blobs'] = self.filter_blobs()
         return context
 
 
@@ -282,7 +279,7 @@ class AdminPermissionMixin(object):
 
 
 class RepositoryView(ObjectViewMixin, generic_views.View):
-    """Map URL path to the Git object that would be found in the working directory, then return the dedicated view.
+    """Map URL path to the Git object at the same path, then return the dedicated view.
 
     This is the only concrete class view, though useless without a configured "type_to_view_class".
     """
