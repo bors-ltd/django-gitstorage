@@ -21,13 +21,11 @@ from urllib.parse import urljoin
 from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.core.files import storage, File
 from django.conf import settings
-from django.utils import timezone
 from django.utils.encoding import filepath_to_uri
 from django.utils._os import safe_join, abspathu
 
 import pygit2
 
-from . import utils
 from . import wrappers
 
 
@@ -62,9 +60,9 @@ class GitStorage(storage.Storage):
 
         # Reference (head)
         try:
-            self.reference = settings.GIT_STORAGE_REFERENCE
+            self.reference_name = settings.GIT_STORAGE_REFERENCE
         except AttributeError:
-            self.reference = DEFAULT_REFERENCE
+            self.reference_name = DEFAULT_REFERENCE
 
         # Author
         try:
@@ -90,22 +88,24 @@ class GitStorage(storage.Storage):
         except AttributeError:
             self.delete_message = DEFAULT_DELETE_MESSAGE
 
-        # Create repository
+        # Create the repository
         if not os.path.exists(location):
-            repository = pygit2.init_repository(self.location, True)  # Bare
+            repository = pygit2.init_repository(self.location, bare=True)
             # Initial commit
-            author = utils.make_signature(self.author_name, self.author_email)
-            committer = utils.make_signature(self.committer_name, self.committer_email)
+            author = pygit2.Signature(self.author_name, self.author_email)
+            committer = pygit2.Signature(self.committer_name, self.committer_email)
             tree = repository.TreeBuilder().write()
-            repository.create_commit(self.reference,
-                                     author,
-                                     committer,
-                                     INITIAL_COMMIT_MESSAGE,
-                                     tree,
-                                     [])
+            repository.create_commit(
+                self.reference_name,
+                author,
+                committer,
+                INITIAL_COMMIT_MESSAGE,
+                tree,
+                [],
+            )
             del repository
 
-        # Open our repository instance
+        # Open the repository with our class
         self.repository = wrappers.Repository(self.location)
         assert self.repository.is_bare
 
@@ -135,7 +135,7 @@ class GitStorage(storage.Storage):
         if mode != 'rb':
             raise ImproperlyConfigured("Can't rewrite Git files, just save on the same path")
         path = self._git_path(name)
-        blob = self.repository.find_object(path)
+        blob = self.repository.peel(path)
         return File(BytesIO(blob.data), name=name)
 
     def _save(self, name, content):
@@ -162,13 +162,14 @@ class GitStorage(storage.Storage):
             @param tree: tree id
             @return: commit id
         """
-        tz = timezone.get_current_timezone()
-        self.repository.create_commit(self.reference,
-                                      utils.make_signature(self.author_name, self.author_email, tz=tz),
-                                      utils.make_signature(self.committer_name, self.committer_email, tz=tz),
-                                      message,
-                                      tree,
-                                      [self.repository.head.target])
+        self.repository.create_commit(
+            self.repository.head.name,
+            pygit2.Signature(self.author_name, self.author_email),
+            pygit2.Signature(self.committer_name, self.committer_email),
+            message,
+            tree,
+            [self.repository.head.target],
+        )
 
     def delete(self, name):
         """Delete the blob at the given path name by committing a tree without it.
@@ -192,11 +193,7 @@ class GitStorage(storage.Storage):
             @param: name: file path, relative to the repository root
         """
         path = self._git_path(name)
-        try:
-            self.repository.find_object(path)
-        except KeyError:
-            return False
-        return True
+        return path in self.repository.tree
 
     def listdir(self, path):
         """List the contents of the given path.
@@ -205,7 +202,7 @@ class GitStorage(storage.Storage):
             @return: ([], []) directories and files
         """
         path = self._git_path(path)
-        tree = self.repository.find_object(path)
+        tree = self.repository.peel(path)
         directories, files = [], []
         for entry in tree:
             if entry.filemode in wrappers.GIT_FILEMODE_BLOB_KINDS:
@@ -220,7 +217,7 @@ class GitStorage(storage.Storage):
             @param: name: file path, relative to the repository root
         """
         path = self._git_path(name)
-        blob = self.repository.find_object(path)
+        blob = self.repository.peel(path)
         return blob.size
 
     def url(self, name):

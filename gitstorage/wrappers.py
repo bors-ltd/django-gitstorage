@@ -18,12 +18,8 @@
 Wrappers with enhanced methods around pygit2 objects.
 """
 
-import datetime
-
 import pygit2
 
-
-EPOCH = datetime.datetime(1970, 1, 1)
 
 GIT_FILEMODE_NEW = 0o0000000
 GIT_FILEMODE_TREE = 0o0040000
@@ -32,8 +28,10 @@ GIT_FILEMODE_BLOB_EXECUTABLE = 0o0100755
 GIT_FILEMODE_LINK = 0o0120000
 GIT_FILEMODE_COMMIT = 0o0160000
 
-GIT_FILEMODE_BLOB_KINDS = (GIT_FILEMODE_BLOB,
-                           GIT_FILEMODE_BLOB_EXECUTABLE)
+GIT_FILEMODE_BLOB_KINDS = (
+    GIT_FILEMODE_BLOB,
+    GIT_FILEMODE_BLOB_EXECUTABLE,
+)
 
 
 class Repository(pygit2.Repository):
@@ -47,31 +45,22 @@ class Repository(pygit2.Repository):
     @property
     def commit(self):
         """shortcut to the head commit"""
-        return self[self.head.target]
+        return self.head.peel(pygit2.GIT_OBJ_COMMIT)
 
     @property
     def tree(self):
         """shortcut to the head tree"""
-        return self[self.head.target].tree
+        return self.head.peel(pygit2.GIT_OBJ_TREE)
 
-    def find_object(self, path):
-        """Find a tree, blob, etc. by its path in the working directory.
+    def peel(self, path):
+        """High-level object retriever"""
 
-            @param path: file path, relative to the repository root
-        """
-        # Fast path for blobs
-        try:
-            return self[self.index[path].id]
-        except KeyError:
-            # Tree traversal
-            tree = self.tree
-            if not path:
-                return tree
-            segments = path.split("/")
-            name = segments.pop()
-            for segment in segments:
-                tree = self[tree[segment].id]
-            return self[tree[name].id]
+        # Repository root
+        if path in ("", "/"):
+            return self.tree
+
+        tree_entry = self.tree[path]
+        return self[tree_entry.id]
 
     def insert(self, path, blob_oid):
         """Insert the blob at the given path name creating missing intermediate trees.
@@ -184,9 +173,9 @@ class Repository(pygit2.Repository):
         return current_tree_oid
 
     def is_tree(self, path):
-        obj = self.find_object(path)
-        return obj.type is pygit2.GIT_OBJ_TREE
+        tree_entry = self.tree[path]
+        return tree_entry.type == "tree"
 
     def is_blob(self, path):
-        obj = self.find_object(path)
-        return obj.type is pygit2.GIT_OBJ_BLOB
+        tree_entry = self.tree[path]
+        return tree_entry.type == "blob"

@@ -106,6 +106,5 @@ class TreePermission(models.Model):
         verbose_name_plural = _("tree permissions")
 
     def __str__(self):
-        path = utils.Path(self.parent_path)
-        path = path.resolve(self.name)
+        path = utils.Path(self.parent_path).resolve(self.name)
         return "{0} on {1}".format(self.user, path)

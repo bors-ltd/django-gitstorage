@@ -41,7 +41,7 @@ class PreviewViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestPreviewView()
         self.view.storage = self.storage
         self.view.path = Path("path/with/unicode/de\u0301po\u0302t.txt")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
 
     def test_preview(self):
@@ -59,7 +59,7 @@ class DownloadViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestDownloadView()
         self.view.storage = self.storage
         self.view.path = Path("path/with/unicode/de\u0301po\u0302t.txt")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
 
     def test_download(self):
@@ -77,7 +77,7 @@ class DeleteViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestDeleteView()
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz/qux.txt")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
 
     def test_delete(self):
@@ -95,7 +95,7 @@ class UploadViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestUploadView()
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
 
     def test_upload(self):
         self.view.request = RequestFactory().post(self.view.path)
@@ -107,7 +107,7 @@ class UploadViewTestCase(VanillaRepositoryMixin, TestCase):
         response = self.view.post(self.view.request)
         self.assertEqual(response['Location'], "/success/")
 
-        blob = self.storage.repository.find_object("foo/bar/baz/toto.jpg")
+        blob = self.storage.repository.peel("foo/bar/baz/toto.jpg")
         self.assertTrue(models.BlobMetadata.objects.filter(id=blob.hex, mimetype="image/jpeg").exists())
 
 
@@ -119,7 +119,7 @@ class SharesViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestSharesView()
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
 
     def test_get(self):
         self.user = factories.SuperUserFactory()
@@ -159,7 +159,7 @@ class ShareViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestShareView()
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
 
     def test_get(self):
         self.user = factories.SuperUserFactory()
@@ -196,7 +196,7 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestBlobObjectView()
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz/qux.txt")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
         self.view.request = RequestFactory().request()
         self.view.request.path = self.view.path
@@ -212,7 +212,7 @@ class BlobObjectViewTestCase(VanillaRepositoryMixin, TestCase):
 
     def test_filter_directories(self):
         parent_path = self.view.path.parent_path
-        tree = self.storage.repository.find_object(parent_path)
+        tree = self.storage.repository.peel(parent_path)
         directories = list(self.view.filter_directories(tree, parent_path))
         self.assertEqual(directories, [])
 
@@ -259,7 +259,7 @@ class TreeObjectViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestTreeObjectView()
         self.view.storage = self.storage
         self.view.path = Path("path/with/hidden")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.request = RequestFactory().request()
         self.view.request.path = self.view.path
         self.view.request.user = factories.SuperUserFactory()
@@ -302,7 +302,7 @@ class BlobViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestBlobView()
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz/qux.txt")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.metadata = factories.BlobMetadataFactory(id=self.view.object.hex, mimetype="text/plain")
         self.view.request = RequestFactory().request()
         self.view.request.user = factories.UserFactory()
@@ -325,7 +325,7 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestTreeView()
         self.view.storage = self.storage
         self.view.path = Path("foo/bar/baz")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.request = RequestFactory().request()
         self.view.request.user = factories.UserFactory()
 
@@ -349,7 +349,7 @@ class TreeViewTestCase(VanillaRepositoryMixin, TestCase):
         self.view = views.TestTreeView()
         self.view.storage = self.storage
         self.view.path = Path("path/with/hidden")
-        self.view.object = self.storage.repository.find_object(self.view.path)
+        self.view.object = self.storage.repository.peel(self.view.path)
         self.view.request = RequestFactory().request()
         self.view.request.user = factories.UserFactory()
         files = list(self.view.filter_files())

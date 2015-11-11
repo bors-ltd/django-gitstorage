@@ -51,7 +51,7 @@ class ObjectViewMixin(object):
     def check_object_type(self):
         """Some views only apply to blobs, other to trees."""
         logger.debug("check_object_type object=%s type=%s", self.object, self.object.type)
-        if not self.object.type in self.allowed_types:
+        if self.object.type not in self.allowed_types:
             raise Http404()
 
     def check_permissions(self):
@@ -129,7 +129,7 @@ class ObjectViewMixin(object):
 
         if not git_obj:
             try:
-                git_obj = self.storage.repository.find_object(path)
+                git_obj = self.storage.repository.peel(path)
             except KeyError:
                 raise Http404()
 
@@ -234,7 +234,7 @@ class UploadViewMixin(TreeViewMixin):
         self.storage.save(path, f)
 
         # Sync metadata
-        blob = self.storage.repository.find_object(path)
+        blob = self.storage.repository.peel(path)
         models.BlobMetadata.objects.create_from_name(f.name, blob.hex)
 
         return super(UploadViewMixin, self).form_valid(form)
@@ -284,7 +284,7 @@ class AdminPermissionMixin(object):
 class RepositoryView(ObjectViewMixin, generic_views.View):
     """Map URL path to the Git object that would be found in the working directory, then return the dedicated view.
 
-    This is the only concrete class view, though useless without a configured "type_to_view".
+    This is the only concrete class view, though useless without a configured "type_to_view_class".
     """
 
     type_to_view_class = {
@@ -320,8 +320,8 @@ class RepositoryView(ObjectViewMixin, generic_views.View):
                 raise Http404()
 
             try:
-                git_obj = kwargs['git_obj'] = storage.repository.find_object(path)
-            except (KeyError, pygit2.GitError):
+                git_obj = kwargs['git_obj'] = storage.repository.peel(path)
+            except KeyError:
                 raise Http404()
 
             # Find a view class dedicated to this object's type

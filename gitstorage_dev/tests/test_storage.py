@@ -41,7 +41,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         self.assertTrue(path.exists(self.location))
         self.assertEqual(self.storage.location, self.location)
         self.assertIsNotNone(repository.commit)
-        self.assertIn(self.storage.reference, repository.listall_references())
+        self.assertIn(self.storage.reference_name, repository.listall_references())
 
         # Introspect commit
         commit = repository.commit
@@ -84,7 +84,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
         self.assertEqual(name, ret)
 
         # Introspect commit
-        tree = self.storage.repository.find_object("foo/bar/baz")
+        tree = self.storage.repository.peel("foo/bar/baz")
         self.assertListEqual(["qux.txt"], ls_tree(tree))
         blob = self.storage.repository[tree["qux.txt"].id]
         self.assertEqual(b"qux", blob.data)
@@ -125,7 +125,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         repository = self.storage.repository
         self.assertEqual(self.storage.location, self.location)
         self.assertEqual('d104ab48cc867e89928e0094d192e5516a98dd25', repository.commit.hex)
-        self.assertListEqual([self.storage.reference], repository.listall_references())
+        self.assertListEqual([self.storage.reference_name], repository.listall_references())
 
     def test_open_root(self):
         """Open a file at the root of the repository."""
