@@ -79,16 +79,18 @@ class GitStorage(storage.Storage):
     def _create(self):
         repository = pygit2.init_repository(self.location, bare=True)
 
+        # Initial config (yes hardcoded... but you can change it afterwards)
+        repository.config['user.name'] = "Git Storage"
+        repository.config['user.email'] = "git@storage"
+
         # Initial commit
-        author = pygit2.Signature(app_config.AUTHOR[0], app_config.AUTHOR[1])
-        committer = pygit2.Signature(app_config.COMMITTER[0], app_config.COMMITTER[1])
-        tree = repository.TreeBuilder().write()
+        tree_id = repository.TreeBuilder().write()
         repository.create_commit(
             app_config.REFERENCE_NAME,
-            author,
-            committer,
+            repository.default_signature,  # Signature from repository/config [user]
+            repository.default_signature,
             app_config.INITIAL_COMMIT_MESSAGE,
-            tree,
+            tree_id,
             [],
         )
 
@@ -113,8 +115,8 @@ class GitStorage(storage.Storage):
         """
         self.repository.create_commit(
             self.repository.head.name,
-            pygit2.Signature(app_config.AUTHOR[0], app_config.AUTHOR[1]),
-            pygit2.Signature(app_config.COMMITTER[0], app_config.COMMITTER[1]),
+            self.repository.default_signature,  # TODO Current user
+            self.repository.default_signature,  # Signature from repository/config [user]
             message,
             tree,
             [self.repository.head.target],
