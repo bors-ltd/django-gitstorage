@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# Inspired from howto/update-hook-example.txt in git docs
+
+# If you are having trouble with this hook script
+# you can try setting this to true.
+verbose=false
+
+# Default shell globbing messes things up downstream
+GLOBIGNORE=*
+
+# Required for proper decoding of paths (pygit2 uses sys.getfilesystemencoding())
+export LC_ALL=en_US.UTF-8
+
+function info {
+    $verbose && echo >&2 "-Info-          $1"
+}
+
+VIRTUAL_ENV=XXX
+export DJANGO_SETTINGS_MODULE="xxx.settings"
+
+REFNAME=$1
+OLD_OBJECT=$2
+NEW_OBJECT=$3
+
+case "$REFNAME" in
+    refs/heads/*)
+        info "update reference $REFNAME from $OLD_OBJECT to $NEW_OBJECT"
+        $VIRTUAL_ENV/bin/django-admin sync_blobmetadata $REFNAME $OLD_OBJECT $NEW_OBJECT
+        ;;
+    *)
+        # Not our business
+        exit 0
+        ;;
+esac

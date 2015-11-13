@@ -13,7 +13,9 @@ GitStorage is:
 - Mixin `views`_ to combine with class-based views to browse the repository and add or remove objects.
   on top of the repository;
 
-- `Management commands`_.
+- `Management commands`_;
+
+- `Hooks`_.
 
 GitStorage is built on top of `PyGit2`_ and `libgit2`_, it does not call Git from the command line.
 
@@ -32,7 +34,7 @@ ctime and atime since Git doesn't directly store those values.
 The storage is limited just as any Git repository. It is designed for a single writer and many readers. Concurrent
 writing is not even tested. No effort was made to optimise read access either. Your mileage may vary.
 
-The storage is an interesting proof-of-concept but even the rest of GitStorage loads Git objects directly.
+The storage exposes trees and blobs, and doesn't try to pretend you see dirs and files on a regular filesystem.
 
 Models
 ------
@@ -108,7 +110,7 @@ sync_blobmetadata
 
 Browse the repository to compute metadata for each blob not known yet.
 
-To call after pushing new commits to the repository, ideally from a Git hook.
+Called by the "update" hook you need to add to your repository (see `Hooks`_).
 
 Cleaning up of metadata for orphan blobs is not handled.
 
@@ -120,7 +122,14 @@ A minimal Django project is shipped to run the test suite. Try ``make coverage``
 Migrations
 ----------
 
-GitStorage uses South.
+GitStorage comes with migrations in the new 1.7+ format.
+
+Hooks
+-----
+
+Gitstorage requires metadata to be created for each blob. Copy ``hooks/update`` to the hooks directory of your
+repository and edit the "VENV" and "DJANGO_SETTINGS_MODULE" variables. You are advised to set "verbose" to true for the first tries.
+In fact, feel free to edit this script to suit your needs and deployment of the Django project.
 
 License
 -------
