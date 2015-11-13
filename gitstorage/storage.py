@@ -104,6 +104,8 @@ class GitStorage(storage.Storage):
             raise ImproperlyConfigured("Can't rewrite Git files, just save on the same path")
         path = self._git_path(name)
         blob = self.repository.open(path)
+        # TODO Yes, we're loading a potentially big file in memory
+        # pygit2 may offer later a lazy map to the blob data as a file-like
         return File(BytesIO(blob.data), name=name)
 
     def _commit(self, message, tree):
@@ -131,12 +133,15 @@ class GitStorage(storage.Storage):
         """
         path = self._git_path(name)
         if hasattr(content, 'temporary_file_path'):
-            blob = self.repository.create_blob_fromdisk(content.temporary_file_path())
+            blob_id = self.repository.create_blob_fromdisk(content.temporary_file_path())
             content.close()
         else:
-            blob = self.repository.create_blob(content.read())
-        tree = self.repository.insert(path, blob)
-        self._commit(app_config.SAVE_MESSAGE, tree)
+            blob_id = self.repository.create_blob(content.read())
+        # The index is a flatten representation of the repository tree
+        index = self.repository.index
+        index.add(pygit2.IndexEntry(path, blob_id, pygit2.GIT_FILEMODE_BLOB))
+        tree_id = index.write_tree()
+        self._commit(app_config.SAVE_MESSAGE, tree_id)
         return name
 
     def delete(self, name):
@@ -145,8 +150,11 @@ class GitStorage(storage.Storage):
             @param: name: file path, relative to the repository root
         """
         path = self._git_path(name)
-        tree = self.repository.remove(path)
-        self._commit(app_config.DELETE_MESSAGE, tree)
+        # The index is a flatten representation of the repository tree
+        index = self.repository.index
+        index.remove(path)
+        tree_id = index.write_tree()
+        self._commit(app_config.DELETE_MESSAGE, tree_id)
 
     def get_available_name(self, name):
         """Always allow to overwrite an existing name.
