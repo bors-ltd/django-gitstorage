@@ -60,7 +60,7 @@ class Command(BaseCommand):
         if repository.head.name != options['refname']:
             if options['verbosity']:
                 self.stdout.write('Ignoring unexposed branch "{}", exiting.'.format(options['refname']))
-                return
+            return
 
         known_blobs = set(models.BlobMetadata.objects.values_list('id', flat=True))
         counter_before = len(known_blobs)
