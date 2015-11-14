@@ -54,13 +54,17 @@ class GitStorage(storage.Storage):
                 base_url = None
         self.base_url = base_url
 
-        # Create the repository
+        # Create the repository as necessary
         if not os.path.exists(location):
             self._create()
 
         # Open the repository with our class
         self.repository = wrappers.Repository(self.location)
         assert self.repository.is_bare
+
+    #
+    # Private Git-specific methods
+    #
 
     def _git_path(self, name):
         """Clean path name and make it relative to the repository root.
@@ -94,20 +98,6 @@ class GitStorage(storage.Storage):
             [],
         )
 
-    def _open(self, name, mode='rb'):
-        """Open the given file name, always in 'rb' mode.
-
-            @param: name: file path, relative to the repository root
-            @return: File object
-        """
-        if mode != 'rb':
-            raise ImproperlyConfigured("Can't rewrite Git files, just save on the same path")
-        path = self._git_path(name)
-        blob = self.repository.open(path)
-        # TODO Yes, we're loading a potentially big file in memory
-        # pygit2 may offer later a lazy map to the blob data as a file-like
-        return File(BytesIO(blob.data), name=name)
-
     def _commit(self, message, tree):
         """Commit the given tree using this commit message.
 
@@ -124,6 +114,22 @@ class GitStorage(storage.Storage):
             [self.repository.head.target],
         )
 
+    # Implementations of high-level open() and save()
+
+    def _open(self, name, mode='rb'):
+        """Open the given file name, always in 'rb' mode.
+
+            @param: name: file path, relative to the repository root
+            @return: File object
+        """
+        if mode != 'rb':
+            raise ImproperlyConfigured("Can't rewrite Git files, just save on the same path")
+        path = self._git_path(name)
+        blob = self.repository.open(path)
+        # TODO Yes, we're loading a potentially big file in memory
+        # pygit2 may offer later a lazy map to the blob data as a file-like
+        return File(BytesIO(blob.data), name=name)
+
     def _save(self, name, content):
         """Save the File content under the given path name.
 
@@ -136,6 +142,8 @@ class GitStorage(storage.Storage):
             blob_id = self.repository.create_blob_fromdisk(content.temporary_file_path())
             content.close()
         else:
+            # TODO Yes, we're loading a potentially big file in memory
+            # Use create_blob_fromfilelike or something when available
             blob_id = self.repository.create_blob(content.read())
         # The index is a flatten representation of the repository tree
         index = self.repository.index
@@ -143,6 +151,24 @@ class GitStorage(storage.Storage):
         tree_id = index.write_tree()
         self._commit(app_config.SAVE_MESSAGE, tree_id)
         return name
+
+    #
+    # Overriding when it doesn't make sense for a git repo
+    #
+
+    def get_available_name(self, name):
+        """Always allow to overwrite an existing name. We're not implementing a storage for media upload.
+
+            @param: name: file path, relative to the repository root
+        """
+        return self._git_path(name)
+
+    def path(self, name):
+        raise NotImplementedError("Git blobs cannot be open through a path.")
+
+    #
+    # Now implementing abstract Storage methods (except path() on purpose)
+    #
 
     def delete(self, name):
         """Delete the blob at the given path name by committing a tree without it.
@@ -155,13 +181,6 @@ class GitStorage(storage.Storage):
         index.remove(path)
         tree_id = index.write_tree()
         self._commit(app_config.DELETE_MESSAGE, tree_id)
-
-    def get_available_name(self, name):
-        """Always allow to overwrite an existing name.
-
-            @param: name: file path, relative to the repository root
-        """
-        return self._git_path(name)
 
     def exists(self, name):
         """Search the given name in the repository.
@@ -203,3 +222,7 @@ class GitStorage(storage.Storage):
         if self.base_url is None:
             raise ValueError("This file is not accessible via a URL.")
         return urljoin(self.base_url, filepath_to_uri(path))
+
+    # accessed_time doesn't make sense for a git repo
+    # created_time would be the time of the first commit adding this blob, but costly
+    # It would remain modified_time, but for what it's worth...
