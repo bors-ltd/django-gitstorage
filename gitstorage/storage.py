@@ -176,7 +176,7 @@ class GitStorage(storage.Storage):
     # Overriding when it doesn't make sense for a git repo
     #
 
-    def get_available_name(self, name):
+    def get_available_name(self, name, max_length=None):
         """Always allow to overwrite an existing name. We're not implementing a storage for media upload.
 
             @param: name: file path, relative to the repository root
