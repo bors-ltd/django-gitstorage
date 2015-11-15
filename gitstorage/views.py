@@ -292,8 +292,8 @@ class BaseRepositoryView(ObjectViewMixin, generic_views.View):
     """
 
     type_to_view_class = {
-        #pygit2.GIT_OBJ_TREE: MyTreeView,
-        #pygit2.GIT_OBJ_BLOB: MyBlobView,
+        # pygit2.GIT_OBJ_TREE: MyTreeView,
+        # pygit2.GIT_OBJ_BLOB: MyBlobView,
     }
 
     @classonlymethod
