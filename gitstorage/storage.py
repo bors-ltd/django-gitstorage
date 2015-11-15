@@ -14,12 +14,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
-from io import BytesIO
+import io
 import os
 from urllib.parse import urljoin
 
 from django.apps import apps
-from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
+from django.core.exceptions import ImproperlyConfigured
 from django.core.files import storage, File
 from django.conf import settings
 from django.utils.encoding import filepath_to_uri
@@ -145,10 +145,10 @@ class GitStorage(storage.Storage):
         if mode != 'rb':
             raise ImproperlyConfigured("Can't rewrite Git files, just save on the same path")
         path = self._git_path(name)
+        # TODO Yes, pygit2 is loading a potentially big file in memory
         blob = self.repository.open(path)
-        # TODO Yes, we're loading a potentially big file in memory
         # pygit2 may offer later a lazy map to the blob data as a file-like
-        return File(BytesIO(blob.data), name=name)
+        return File(io.BytesIO(blob.data), name=name)
 
     def _save(self, name, content):
         """Save the File content under the given path name.
@@ -163,7 +163,7 @@ class GitStorage(storage.Storage):
             content.close()
         else:
             # TODO Yes, we're loading a potentially big file in memory
-            # Use create_blob_fromfilelike or something when available
+            # Use create_blob_fromiobase when available
             blob_id = self.repository.create_blob(content.read())
         # The index is a flatten representation of the repository tree
         index = self.repository.index
