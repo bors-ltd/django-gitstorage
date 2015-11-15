@@ -13,13 +13,9 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
-
-import string
-
 import factory
 
 from django.contrib.auth import models as auth_models
-from django.utils.crypto import get_random_string
 
 from gitstorage import models
 
@@ -33,7 +29,10 @@ class UserFactory(factory.DjangoModelFactory):
     class Meta:
         model = auth_models.User
 
-    username = factory.Sequence("user{0}".format)
+    username = factory.Sequence("john{}".format)
+    first_name = factory.Sequence("John{}".format)
+    last_name = factory.Sequence("Doe{}".format)
+    email = factory.Sequence("john.doe{}@example.com".format)
 
     @classmethod
     def _prepare(cls, create, **kwargs):
@@ -55,7 +54,6 @@ class BlobMetadataFactory(factory.DjangoModelFactory):
     class Meta:
         model = models.BlobMetadata
 
-    id = get_random_string(40, allowed_chars=string.hexdigits.lower())
     mimetype = "text/plain"
 
 
@@ -63,7 +61,6 @@ class TreeMetadataFactory(factory.DjangoModelFactory):
     class Meta:
         model = models.TreeMetadata
 
-    id = get_random_string(40, allowed_chars=string.hexdigits.lower())
     mimetype = None
 
     @classmethod

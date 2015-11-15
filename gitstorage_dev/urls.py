@@ -1,17 +1,16 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import patterns, url
 
-# Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
-# admin.autodiscover()
+from .tests import views
 
 urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'gitstorage_dev.views.home', name='home'),
-    # url(r'^gitstorage_dev/', include('gitstorage_dev.foo.urls')),
-
-    # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
-    # url(r'^admin/', include(admin.site.urls)),
+    # Blob views
+    url(r'^(?P<path>.+)/;preview$', views.TestPreviewView.as_view(), name='blob_preview'),
+    url(r'^(?P<path>.+)/;download$', views.TestDownloadView.as_view(), name='blob_download'),
+    url(r'^(?P<path>.+)/;delete$', views.TestDeleteView.as_view(), name='blob_delete'),
+    # Tree views (including the root)
+    url(r'^(?P<path>.*)/?;shares$', views.TestSharesView.as_view(), name='tree_shares'),
+    url(r'^(?P<path>.*)/?;share$', views.TestShareView.as_view(), name='tree_share'),
+    url(r'^(?P<path>.*)/?;upload$', views.TestUploadView.as_view(), name='tree_upload'),
+    # Browse/catch-all view
+    url(r'^(?P<path>.*)$', views.TestRepositoryView.as_view(), name='repo_browse'),
 )

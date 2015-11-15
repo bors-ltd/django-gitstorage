@@ -13,97 +13,61 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
+import pygit2
 
 from django.http.response import HttpResponse
 from django.views import generic
 
-import pygit2
-
 from gitstorage import views
 
 
-class TestViewMixin(object):
-
-    def get_context_data(self, **kwargs):
-        return kwargs
-
-
-class TestFormViewMixin(TestViewMixin):
-
-    def get_success_url(self):
-        return "/success/"
+class TestFormViewMixin(object):
+    success_url = "/success/"
 
     def form_invalid(self, form):
-        return HttpResponse("invalid")
+        return HttpResponse(str(form.errors))
 
 
-class TestPreviewView(views.PreviewViewMixin, TestViewMixin, generic.View):
-    pass
+class TestPreviewView(views.PreviewViewMixin, generic.TemplateView):
+    template_name = "base.html"
 
 
-class TestDownloadView(views.DownloadViewMixin, TestViewMixin, generic.View):
-    pass
+class TestDownloadView(views.DownloadViewMixin, generic.TemplateView):
+    template_name = "base.html"
 
 
-class TestDeleteView(views.DeleteViewMixin, TestViewMixin, generic.View):
-    pass
+class TestDeleteView(views.DeleteViewMixin, TestFormViewMixin, generic.FormView):
+    template_name = "base.html"
 
 
 class TestUploadView(views.UploadViewMixin, TestFormViewMixin, generic.FormView):
-    pass
+    template_name = "base.html"
 
 
 class TestSharesView(views.SharesViewMixin, TestFormViewMixin, generic.FormView):
+    template_name = "base.html"
 
     def get(self, request, *args, **kwargs):
         return HttpResponse("shares", *args, **kwargs)
 
 
 class TestShareView(views.ShareViewMixin, TestFormViewMixin, generic.FormView):
+    template_name = "base.html"
 
     def get(self, request, *args, **kwargs):
         return HttpResponse("share", *args, **kwargs)
 
 
-class TestBlobObjectView(views.ObjectViewMixin, TestViewMixin, generic.View):
-    allowed_types = (pygit2.GIT_OBJ_BLOB,)
-
-    def get(self, request, *args, **kwargs):
-        return HttpResponse(self.path, *args, **kwargs)
+class TestBlobView(views.BlobViewMixin, generic.TemplateView):
+    template_name = "base.html"
 
 
-class TestTreeObjectView(views.ObjectViewMixin, TestViewMixin, generic.View):
-    allowed_types = (pygit2.GIT_OBJ_TREE,)
-
-    def get(self, request, *args, **kwargs):
-        return HttpResponse(self.path, *args, **kwargs)
+class TestTreeView(views.TreeViewMixin, generic.TemplateView):
+    template_name = "base.html"
 
 
-class TestBlobView(views.BlobViewMixin, generic.View):
-
-    def get(self, request, *args, **kwargs):
-        return HttpResponse(self.path, *args, **kwargs)
-
-
-class TestTreeView(views.TreeViewMixin, TestViewMixin, generic.View):
-
-    def get(self, request, *args, **kwargs):
-        return HttpResponse(self.path, *args, **kwargs)
-
-
-class StubValue(Exception):
-    pass
-
-
-class StubPermissionMixin(object):
-
-    def check_permissions(self):
-        raise StubValue()
-
-
-class TestAdminView(views.AdminPermissionMixin, StubPermissionMixin, generic.View):
-    pass
-
-
-class TestBaseRepositoryView(views.BaseRepositoryView):
-    pass
+class TestRepositoryView(views.BaseRepositoryView):
+    type_to_view_class = {
+        pygit2.GIT_OBJ_BLOB: TestBlobView,
+        pygit2.GIT_OBJ_TREE: TestTreeView,
+    }
