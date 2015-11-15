@@ -15,10 +15,12 @@
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 import pygit2
 
+from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.http.response import Http404
 from django.test import TestCase
+from django.test.client import RequestFactory
 
 from gitstorage import factories
 from gitstorage import models
@@ -296,3 +298,60 @@ class AdminPermissionTestCase(BaseViewTestCase):
         self.client.login(username=superuser.username, password="pass2")
         response = self.client.get(reverse('repo_browse', args=[""]))
         self.assertEqual(response.status_code, 200)
+
+
+class CoverageTestCase(VanillaRepositoryMixin, TestCase):
+    """Edge cases to reach 100 % coverage."""
+
+    def setUp(self):
+        super().setUp()
+        self.storage = storage.GitStorage(self.location)
+
+    def test_initkwargs(self):
+        self.assertRaises(TypeError, views.DummyRepositoryView.as_view, get=None)
+        self.assertRaises(TypeError, views.DummyRepositoryView.as_view, foo=None)
+
+    def test_view_path(self):
+        request = RequestFactory()
+        view = views.DummyRepositoryView.as_view()
+        # These paths exist
+        self.assertRaises(Http404, view, request, "foo.txt;download")
+        self.assertRaises(Http404, view, request, "foo/bar/baz/qux.txt/;download")
+
+    def test_type_to_view(self):
+        request = RequestFactory()
+        view = views.DummyRepositoryView.as_view()
+        # These paths exist
+        self.assertRaises(PermissionDenied, view, request, "foo/bar/baz")
+        self.assertRaises(PermissionDenied, view, request, "foo/bar/baz/qux.txt")
+
+    def test_check_permissions(self):
+        view = views.DummyRepositoryView()
+        self.assertRaises(NotImplementedError, view.check_permissions)
+
+        request = RequestFactory()
+        request.user = factories.UserFactory()
+        view = views.DummyAdminDeleteView(request=request, path=Path(""))
+        self.assertRaises(PermissionDenied, view.check_permissions)
+
+        request = RequestFactory()
+        request.user = factories.SuperUserFactory()
+        view = views.DummyAdminDeleteView(request=request, path=Path(""))
+        self.assertIsNone(view.check_permissions())
+
+    def test_filter_hidden(self):
+        request = RequestFactory()
+        request.user = factories.UserFactory()
+        view = views.DummyTreeView(request=request, path=Path("path/with/hidden"), storage=self.storage)
+
+        blobs = view.filter_blobs()
+        self.assertNotIn(".file", [entry['name'] for entry in blobs])
+
+        trees = view.filter_trees(view.path)
+        self.assertNotIn(".directory", [entry['name'] for entry in trees])
+
+    def test_dispatch_not_found(self):
+        request = RequestFactory()
+        request.user = factories.UserFactory()
+        view = views.DummyTreeView()
+        self.assertRaises(Http404, view.dispatch, request, path=Path("tot/coin"))

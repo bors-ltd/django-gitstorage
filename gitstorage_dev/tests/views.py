@@ -71,3 +71,20 @@ class TestRepositoryView(views.BaseRepositoryView):
         pygit2.GIT_OBJ_BLOB: TestBlobView,
         pygit2.GIT_OBJ_TREE: TestTreeView,
     }
+
+
+class DummyRepositoryView(views.BaseRepositoryView):
+    # Don't implement type_to_view_class
+    pass
+
+
+class DummyAdminDeleteView(views.AdminPermissionMixin, views.DeleteViewMixin, generic.View):
+    pass
+
+
+class DummyTreeView(views.TreeViewMixin, generic.View):
+    pass
+
+
+class DummyBlobView(views.BlobViewMixin, generic.View):
+    pass
