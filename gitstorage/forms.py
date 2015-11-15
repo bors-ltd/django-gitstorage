@@ -24,7 +24,7 @@ class UsersChoiceField(forms.ModelMultipleChoiceField):
     def __init__(self, **kwargs):
         # Since superusers always are allowed, filter them out by default
         queryset = auth_models.User.objects.filter(is_superuser=False)
-        super(UsersChoiceField, self).__init__(queryset, **kwargs)
+        super().__init__(queryset, **kwargs)
 
     def label_from_instance(self, user):
         return "{0.first_name} {0.last_name} <{0.email}>".format(user)
@@ -34,7 +34,7 @@ class RemoveUsersForm(forms.Form):
     users = UsersChoiceField(label=_("Users"), widget=forms.CheckboxSelectMultiple)
 
     def __init__(self, current_user_ids, **kwargs):
-        super(RemoveUsersForm, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.fields['users'].queryset = self.fields['users'].queryset.filter(pk__in=current_user_ids)
 
 
@@ -42,7 +42,7 @@ class AddUsersForm(forms.Form):
     users = UsersChoiceField(label=_("Users"), widget=forms.CheckboxSelectMultiple)
 
     def __init__(self, current_user_ids, **kwargs):
-        super(AddUsersForm, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.fields['users'].queryset = self.fields['users'].queryset.exclude(pk__in=current_user_ids)
 
 

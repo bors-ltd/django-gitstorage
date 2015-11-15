@@ -34,7 +34,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
     """Tests with an empty repository from scratch."""
 
     def setUp(self):
-        super(NewGitStorageTestCase, self).setUp()
+        super().setUp()
         self.storage = GitStorage(location=self.location)
 
     def test_init_repository(self):
@@ -117,7 +117,7 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
     """Tests with an existing and pre-filled repository."""
 
     def setUp(self):
-        super(VanillaGitStorageTestCase, self).setUp()
+        super().setUp()
         settings.GIT_STORAGE_URL = None
         self.storage = GitStorage()
 
