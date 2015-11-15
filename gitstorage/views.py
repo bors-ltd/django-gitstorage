@@ -90,7 +90,7 @@ class ObjectViewMixin(object):
         if self.object.type is pygit2.GIT_OBJ_BLOB:
             self.metadata = models.BlobMetadata.objects.get(pk=self.object.hex)
         elif self.object.type is pygit2.GIT_OBJ_TREE:
-            self.metadata = models.TreeMetadata(id=self.object.hex)
+            self.metadata = models.TreeMetadata(pk=self.object.hex)
 
     def get_context_data(self, **kwargs):
         """Context variables for any type of Git object and on every page."""
@@ -199,26 +199,26 @@ class TreeViewMixin(ObjectViewMixin):
             raise PermissionDenied()
 
     def filter_blobs(self):
-        # Always assume files are readable if the parent tree is
         hex_to_name = {}
-        for entry in self.object:
+        _trees, blobs = self.storage.listdir(self.path)
+        for entry in blobs:
             # Hide hidden files
             if entry.name[0] == ".":
                 continue
-            if entry.type == "blob":
-                hex_to_name[entry.hex] = entry.name
+            # No check on allowed_names, all blobs are readable if their parent tree is
+            hex_to_name[entry.hex] = entry.name
 
         # Fetch metadata for all of the entries in a single query
-        metadata = {}
-        for value in models.BlobMetadata.objects.filter(pk__in=hex_to_name.keys()):
-            metadata[value.pk] = value
+        all_metadata = {}
+        for metadata in models.BlobMetadata.objects.filter(pk__in=hex_to_name.keys()):
+            all_metadata[metadata.pk] = metadata
 
         blobs = []
         for hex, name in hex_to_name.items():
             blobs.append({
                 'name': name,
                 'path': self.path.resolve(name),
-                'metadata': metadata[hex],
+                'metadata': all_metadata[hex],
             })
         return sorted(blobs, key=operator.itemgetter('name'))
 
