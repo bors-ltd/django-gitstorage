@@ -62,6 +62,9 @@ class GitStorage(storage.Storage):
         self.repository = wrappers.Repository(self.location)
         assert self.repository.is_bare
 
+        # Author of the following commits
+        self.author_signature = self.repository.default_signature
+
     #
     # Private Git-specific methods
     #
@@ -91,8 +94,8 @@ class GitStorage(storage.Storage):
         tree_id = repository.TreeBuilder().write()
         repository.create_commit(
             app_config.REFERENCE_NAME,
-            repository.default_signature,  # Signature from repository/config [user]
-            repository.default_signature,
+            repository.default_signature,  # Author signature from repository/config [user]
+            repository.default_signature,  # Committer signature from repository/config [user]
             app_config.INITIAL_COMMIT_MESSAGE,
             tree_id,
             [],
@@ -107,12 +110,29 @@ class GitStorage(storage.Storage):
         """
         self.repository.create_commit(
             self.repository.head.name,
-            self.repository.default_signature,  # TODO Current user
-            self.repository.default_signature,  # Signature from repository/config [user]
+            self.author_signature,
+            self.repository.default_signature,  # Committer signature from repository/config [user]
             message,
             tree,
             [self.repository.head.target],
         )
+
+    #
+    # Public Git-specific methods
+    #
+
+    def set_author(self, user):
+        """
+        Set the current author for the following commits (through save() and delete().
+
+        :param user: User model (or compatible) instance
+
+        This state is stored not to modify save() and delete() signatures. This also means you must remember to
+        set another author as required.
+
+        Designed with a repository reopened at each web request in mind.
+        """
+        self.author_signature = pygit2.Signature(user.get_full_name(), user.email)
 
     # Implementations of high-level open() and save()
 

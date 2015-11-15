@@ -21,6 +21,7 @@ from django.core.exceptions import ImproperlyConfigured, SuspiciousOperation
 from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
 from django.test import TestCase
 
+from gitstorage import factories
 from gitstorage.storage import GitStorage
 from gitstorage.tests.utils import NewRepositoryMixin, VanillaRepositoryMixin
 
@@ -66,7 +67,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
     def test_save_root(self):
         name = "foo.txt"
         content = SimpleUploadedFile(name, b'foo')
-        ret = self.storage._save(name, content)
+        ret = self.storage.save(name, content)
         self.assertEqual(name, ret)
 
         # Introspect commit
@@ -80,7 +81,7 @@ class NewGitStorageTestCase(NewRepositoryMixin, TestCase):
     def test_save_subtree(self):
         name = "foo/bar/baz/qux.txt"
         content = SimpleUploadedFile(name, b'qux')
-        ret = self.storage._save(name, content)
+        ret = self.storage.save(name, content)
         self.assertEqual(name, ret)
 
         # Introspect commit
@@ -127,15 +128,19 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.assertEqual('d104ab48cc867e89928e0094d192e5516a98dd25', repository.commit.hex)
         self.assertListEqual(['refs/heads/master'], repository.listall_references())  # apps default
 
+    def test_path(self):
+        """Make coverage happy."""
+        self.assertRaises(NotImplementedError, self.storage.path, "foo.txt")
+
     def test_open_root(self):
         """Open a blob at the root of the repository."""
-        blob = self.storage._open("foo.txt")
+        blob = self.storage.open("foo.txt")
         self.assertEqual("foo.txt", blob.name)
         self.assertEqual(b"foo\n", blob.read())
 
     def test_open_subtree(self):
         """Open a blob in a subtree."""
-        blob = self.storage._open("foo/bar/baz/qux.txt")
+        blob = self.storage.open("foo/bar/baz/qux.txt")
         self.assertEqual("foo/bar/baz/qux.txt", blob.name)
         self.assertEqual(b"qux\n", blob.read())
 
@@ -144,21 +149,21 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
 
     def test_overwrite_root(self):
         name = "foo.txt"
-        self.storage._save(name, SimpleUploadedFile(name, b'toto'))
+        self.storage.save(name, SimpleUploadedFile(name, b'toto'))
 
-        content = self.storage._open(name)
+        content = self.storage.open(name)
         self.assertEqual(b"toto", content.read())
 
     def test_overwrite_subtree(self):
         name = "foo/bar/baz/qux.txt"
-        self.storage._save(name, SimpleUploadedFile(name, b'toto'))
+        self.storage.save(name, SimpleUploadedFile(name, b'toto'))
 
-        content = self.storage._open(name)
+        content = self.storage.open(name)
         self.assertEqual(b"toto", content.read())
 
     def test_save_existing_subtree(self):
         name = "foo/bar/toto.txt"
-        self.storage._save(name, SimpleUploadedFile(name, b'toto'))
+        self.storage.save(name, SimpleUploadedFile(name, b'toto'))
 
         # Introspect commit
         commit = self.storage.repository.commit
@@ -181,8 +186,8 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         name = "foo/bar/toto.txt"
         content = TemporaryUploadedFile("temporary", "application/binary", (settings.FILE_UPLOAD_MAX_MEMORY_SIZE + 1),
                                         None)
-        self.storage._save(name, content)
-        self.assertEqual(self.storage._open(name).read(), b'')
+        self.storage.save(name, content)
+        self.assertEqual(self.storage.open(name).read(), b'')
 
     def test_delete_root(self):
         name = "foo.txt"
@@ -232,3 +237,20 @@ class VanillaGitStorageTestCase(VanillaRepositoryMixin, TestCase):
         self.storage = GitStorage(base_url="/mystorage/")
         self.assertEqual(self.storage.url("foo/bar/baz"), "/mystorage/foo/bar/baz")
         self.assertEqual(self.storage.url("foo/bar/baz/qux.txt"), "/mystorage/foo/bar/baz/qux.txt")
+
+    def test_set_author(self):
+        user = factories.UserFactory(first_name="John", last_name="Doe", email="john.doe@example.com")
+
+        self.storage.save("toto.txt", SimpleUploadedFile("toto.txt", b'toto'))
+        commit = self.storage.repository.commit
+
+        self.assertEqual(commit.author.name, "Git Storage")
+        self.assertEqual(commit.author.email, "git@storage")
+
+        self.storage.set_author(user)
+
+        self.storage.save("toto.txt", SimpleUploadedFile("toto.txt", b'toto'))
+        commit = self.storage.repository.commit
+
+        self.assertEqual(commit.author.name, "John Doe")
+        self.assertEqual(commit.author.email, "john.doe@example.com")

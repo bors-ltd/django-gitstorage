@@ -19,6 +19,7 @@ import logging
 import operator
 import unicodedata
 
+from django import forms as django_forms
 from django.core.exceptions import PermissionDenied
 from django.http.response import Http404, StreamingHttpResponse
 from django.utils.decorators import classonlymethod
@@ -158,6 +159,7 @@ class PreviewViewMixin(BlobViewMixin):
         content = self.storage.open(self.path)
         # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
         filename = unicodedata.normalize('NFKC', self.path.name)
+
         response = StreamingHttpResponse(content, content_type=self.metadata.mimetype)
         response['Content-Disposition'] = "inline; filename=%s" % (filename,)
         return response
@@ -169,15 +171,20 @@ class DownloadViewMixin(BlobViewMixin):
         content = self.storage.open(self.path)
         # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
         filename = unicodedata.normalize('NFKC', self.path.name)
+
         response = StreamingHttpResponse(content, content_type=self.metadata.mimetype)
         response['Content-Disposition'] = "attachment; filename=%s" % (filename,)
         return response
 
 
 class DeleteViewMixin(BlobViewMixin):
+    form_class = django_forms.Form  # Dummy form just to follow FormMixin API
 
-    def post(self, request, *args, **kwargs):
+    def form_valid(self, form):
+        self.storage.set_author(self.request.user)
         self.storage.delete(self.path)
+
+        return super(DeleteViewMixin, self).form_valid(form)
 
 
 class TreeViewMixin(ObjectViewMixin):
@@ -228,6 +235,7 @@ class UploadViewMixin(TreeViewMixin):
     def form_valid(self, form):
         f = form.cleaned_data['file']
         path = self.path.resolve(f.name)
+        self.storage.set_author(self.request.user)
         self.storage.save(path, f)
 
         # Sync metadata
