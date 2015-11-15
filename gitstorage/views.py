@@ -124,6 +124,7 @@ class ObjectViewMixin(object):
         if not storage:
             storage = git_storage.GitStorage()
         self.storage = storage
+        self.storage.set_author(request.user)
 
         if not git_obj:
             try:
@@ -181,7 +182,6 @@ class DeleteViewMixin(BlobViewMixin):
     form_class = django_forms.Form  # Dummy form just to follow FormMixin API
 
     def form_valid(self, form):
-        self.storage.set_author(self.request.user)
         self.storage.delete(self.path)
 
         return super(DeleteViewMixin, self).form_valid(form)
@@ -235,7 +235,6 @@ class UploadViewMixin(TreeViewMixin):
     def form_valid(self, form):
         f = form.cleaned_data['file']
         path = self.path.resolve(f.name)
-        self.storage.set_author(self.request.user)
         self.storage.save(path, f)
 
         # Sync metadata
