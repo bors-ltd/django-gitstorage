@@ -132,7 +132,7 @@ class GitStorage(storage.Storage):
 
         Designed with a repository reopened at each web request in mind.
         """
-        self.author_signature = pygit2.Signature(user.get_full_name(), user.email)
+        self.author_signature = pygit2.Signature(user.get_full_name(), user.email, encoding='utf8')
 
     # Implementations of high-level open() and save()
 
