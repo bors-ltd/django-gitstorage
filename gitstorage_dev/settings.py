@@ -25,7 +25,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'gitstorage',
+    'gitstorage.apps.GitStorageConfig',
     'gitstorage_dev',
 )
 

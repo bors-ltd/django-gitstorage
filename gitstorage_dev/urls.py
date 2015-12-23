@@ -1,8 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from .tests import views
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Blob views
     url(r'^(?P<path>.+)/;preview$', views.TestPreviewView.as_view(), name='blob_preview'),
     url(r'^(?P<path>.+)/;download$', views.TestDownloadView.as_view(), name='blob_download'),
@@ -13,4 +13,4 @@ urlpatterns = patterns('',
     url(r'^(?P<path>.*)/?;upload$', views.TestUploadView.as_view(), name='tree_upload'),
     # Browse/catch-all view
     url(r'^(?P<path>.*)$', views.TestRepositoryView.as_view(), name='repo_browse'),
-)
+]
