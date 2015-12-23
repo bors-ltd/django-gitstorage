@@ -1,0 +1,19 @@
+[MASTER]
+
+# Specify a configuration file.
+#rcfile=
+
+init-hook='import os, sys; sys.path.append(os.getcwd())'
+
+ignore=migrations,south_migrations
+
+[MESSAGES CONTROL]
+disable=
+
+[FORMAT]
+
+max-line-length=120
+
+[REPORTS]
+
+reports=no

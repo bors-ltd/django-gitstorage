@@ -1,4 +1,5 @@
 PACKAGE=gitstorage
+PYLINT_RC=".pylintrc"
 
 all:
 
@@ -30,4 +31,7 @@ compilemessages:
 release: test compilemessages
 	python setup.py sdist
 
-.PHONY: clean docs test coverage makemessages compilemessages release
+pylint:
+	pylint --rcfile=$(PYLINT_RC) --output-format=colorized $(PACKAGE) || true
+
+.PHONY: clean docs test coverage makemessages compilemessages release pylint
