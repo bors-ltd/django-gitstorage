@@ -14,6 +14,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
+import magic
+
 from django.contrib.auth import models as auth_models
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -46,9 +48,10 @@ class BlobMetadataManager(models.Manager):
         mimetype = mimetypes.guess_type(name)[0]
         return self.create(id=id, mimetype=mimetype, **kwargs)
 
-    def create_from_content(self):
-        # Could "file -i" the blob content
-        raise NotImplementedError()
+    def create_from_content(self, repository, id, **kwargs):
+        blob = repository[id]
+        mimetype = magic.from_buffer(blob.data, mime=True).decode()
+        return self.create(id=id, mimetype=mimetype, **kwargs)
 
 
 class BlobMetadata(BaseObjectMetadata):

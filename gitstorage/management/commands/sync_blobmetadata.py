@@ -39,7 +39,7 @@ class Command(BaseCommand):
             elif entry.type == "blob":
                 if entry.hex in known_blobs:
                     continue
-                models.BlobMetadata.objects.create_from_name(entry.name, entry.hex)
+                models.BlobMetadata.objects.create_from_content(repository, entry.hex)
                 known_blobs.add(entry.hex)
 
     def walk(self, repository, start_oid, end_oid, known_blobs):

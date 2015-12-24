@@ -19,16 +19,24 @@ from django.test.testcases import TestCase
 from gitstorage import factories
 from gitstorage import models
 from gitstorage import utils
+from gitstorage import wrappers
+from gitstorage.tests import utils as tests_utils
 
 
-class BlobMetadataManagerTestCase(TestCase):
+class BlobMetadataManagerTestCase(tests_utils.VanillaRepositoryMixin, TestCase):
 
     def test_create_from_name(self):
-        metadata = models.BlobMetadata.objects.create_from_name("my_pic.jpg", "c0d11342c4241087e3c126f7666d618586e39068")
+        metadata = models.BlobMetadata.objects.create_from_name(
+            "my_pic.jpg", "c0d11342c4241087e3c126f7666d618586e39068",
+        )
         self.assertEqual(metadata.mimetype, "image/jpeg")
 
     def test_create_from_content(self):
-        self.assertRaises(NotImplementedError, models.BlobMetadata.objects.create_from_content)
+        repository = wrappers.Repository(self.location)
+        metadata = models.BlobMetadata.objects.create_from_content(
+            repository, "257cc5642cb1a054f08cc83f2d943e56fd3ebe99",
+        )
+        self.assertEqual(metadata.mimetype, "text/plain")
 
 
 class BlobMetadataTestCase(TestCase):

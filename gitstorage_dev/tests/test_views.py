@@ -116,7 +116,7 @@ class UploadViewTestCase(BaseViewTestCase):
         response = self.client.post(reverse('tree_upload', args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
-        data = {'file': SimpleUploadedFile("toto.jpg", b"toto")}
+        data = {'file': SimpleUploadedFile("toto.jpg", b"\xff\xd8\xff\xe0\x00\x10JFIF")}
         response = self.client.post(reverse('tree_upload', args=[self.path]), data=data)
         self.assertEqual(response.status_code, 302)
 
