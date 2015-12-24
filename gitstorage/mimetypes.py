@@ -21,7 +21,11 @@ Preload and complement the Python mimetypes module.
 import mimetypes
 
 mimetypes.init()
-for mimetype, ext in [("image/x-xcf", ".xcf")]:
+for mimetype, ext in [
+    ("image/x-xcf", ".xcf"),
+    ("image/x-pef", ".pef"),
+    ("image/x-rw2", ".rw2"),
+]:
     mimetypes.add_type(mimetype, ext)
 
 __all__ = ['guess_type']
