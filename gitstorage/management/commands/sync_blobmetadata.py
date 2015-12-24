@@ -40,7 +40,7 @@ class Command(BaseCommand):
                 if entry.hex in known_blobs:
                     continue
                 blob = repository[entry.id]
-                models.BlobMetadata.objects.create(id=entry.hex, name=entry.name, buffer=blob.data)
+                models.get_blob_metadata_model().objects.create(id=entry.hex, name=entry.name, buffer=blob.data)
                 known_blobs.add(entry.hex)
 
     def walk(self, repository, start_oid, end_oid, known_blobs):
@@ -63,7 +63,7 @@ class Command(BaseCommand):
                 self.stdout.write('Ignoring unexposed branch "{}", exiting.'.format(options['refname']))
             return
 
-        known_blobs = set(models.BlobMetadata.objects.values_list('id', flat=True))
+        known_blobs = set(models.get_blob_metadata_model().objects.values_list('id', flat=True))
         counter_before = len(known_blobs)
 
         start_oid = options['start_oid']

@@ -88,7 +88,7 @@ class ObjectViewMixin(object):
         Trees have an in-memory metadata built on the fly.
         """
         if self.object.type is pygit2.GIT_OBJ_BLOB:
-            self.metadata = models.BlobMetadata.objects.get(pk=self.object.hex)
+            self.metadata = models.get_blob_metadata_model().objects.get(pk=self.object.hex)
         elif self.object.type is pygit2.GIT_OBJ_TREE:
             self.metadata = models.TreeMetadata(pk=self.object.hex)
 
@@ -210,7 +210,7 @@ class TreeViewMixin(ObjectViewMixin):
 
         # Fetch metadata for all of the entries in a single query
         all_metadata = {}
-        for metadata in models.BlobMetadata.objects.filter(pk__in=hex_to_name.keys()):
+        for metadata in models.get_blob_metadata_model().objects.filter(pk__in=hex_to_name.keys()):
             all_metadata[metadata.pk] = metadata
 
         blobs = []
@@ -239,7 +239,7 @@ class UploadViewMixin(TreeViewMixin):
 
         # Sync metadata
         blob = self.storage.repository.open(path)
-        models.BlobMetadata.objects.create(id=blob.hex, name=f.name, buffer=blob.data)
+        models.get_blob_metadata_model().objects.create(id=blob.hex, name=f.name, buffer=blob.data)
 
         return super().form_valid(form)
 

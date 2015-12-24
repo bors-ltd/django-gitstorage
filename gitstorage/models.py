@@ -16,13 +16,34 @@
 
 import magic
 
+from django.apps import apps as django_apps
+from django.conf import settings
 from django.contrib.auth import models as auth_models
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from . import mimetypes
 from . import utils
 from . import validators
+
+
+def get_blob_metadata_model():
+    """
+    Returns the BlobMetadata model that is active in this project.
+    """
+    try:
+        return django_apps.get_model(settings.GIT_STORAGE_BLOB_METADATA_MODEL)
+    except ValueError:
+        raise ImproperlyConfigured("GIT_STORAGE_BLOB_METADATA_MODEL must be of the form 'app_label.model_name'")
+    except LookupError:
+        raise ImproperlyConfigured(
+            "GIT_STORAGE_BLOB_METADATA_MODEL refers to model '%s' that has not been installed" % (
+                settings.GIT_STORAGE_BLOB_METADATA_MODEL,
+            )
+        )
+    except AttributeError:
+        return BlobMetadata
 
 
 def guess_mimetype(name=None, buffer=None):
@@ -35,9 +56,19 @@ def guess_mimetype(name=None, buffer=None):
     return mimetype
 
 
+class BaseObjectMetadataManager(models.Manager):
+
+    def create(self, id=None, mimetype=None, name=None, buffer=None, **kwargs):
+        if mimetype is None:
+            mimetype = guess_mimetype(name=name, buffer=buffer)
+        return super().create(id=id, mimetype=mimetype, **kwargs)
+
+
 class BaseObjectMetadata(models.Model):
     id = models.CharField(_("id"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
     mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
+
+    objects = BaseObjectMetadataManager()
 
     class Meta:
         abstract = True
@@ -52,21 +83,12 @@ class TreeMetadata(BaseObjectMetadata):
         return "{0.id}".format(self)
 
 
-class BlobMetadataManager(models.Manager):
-
-    def create(self, id=None, mimetype=None, name=None, buffer=None, **kwargs):
-        if mimetype is None:
-            mimetype = guess_mimetype(name=name, buffer=buffer)
-        return super().create(id=id, mimetype=mimetype, **kwargs)
-
-
 class BlobMetadata(BaseObjectMetadata):
-
-    objects = BlobMetadataManager()
 
     class Meta:
         verbose_name = _("blob metadata")
         verbose_name_plural = _("blob metadata")
+        swappable = 'GIT_STORAGE_BLOB_METADATA_MODEL'
 
     def __str__(self):
         return "{0.id} type={0.mimetype}".format(self)
