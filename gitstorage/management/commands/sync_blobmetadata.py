@@ -40,7 +40,10 @@ class Command(BaseCommand):
                 if entry.hex in known_blobs:
                     continue
                 blob = repository[entry.id]
-                models.get_blob_metadata_model().objects.create(id=entry.hex, name=entry.name, buffer=blob.data)
+                metadata = models.get_blob_metadata_model()()
+                metadata.id = entry.hex
+                metadata.mimetype = models.guess_mimetype(name=entry.name, buffer=blob.data)
+                metadata.save()
                 known_blobs.add(entry.hex)
 
     def walk(self, repository, start_oid, end_oid, known_blobs):

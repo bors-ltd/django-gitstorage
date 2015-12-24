@@ -56,19 +56,9 @@ def guess_mimetype(name=None, buffer=None):
     return mimetype
 
 
-class BaseObjectMetadataManager(models.Manager):
-
-    def create(self, id=None, mimetype=None, name=None, buffer=None, **kwargs):
-        if mimetype is None:
-            mimetype = guess_mimetype(name=name, buffer=buffer)
-        return super().create(id=id, mimetype=mimetype, **kwargs)
-
-
 class BaseObjectMetadata(models.Model):
     id = models.CharField(_("id"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
     mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
-
-    objects = BaseObjectMetadataManager()
 
     class Meta:
         abstract = True

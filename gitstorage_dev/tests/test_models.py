@@ -25,19 +25,15 @@ from gitstorage.tests import utils as tests_utils
 
 class BlobMetadataManagerTestCase(tests_utils.VanillaRepositoryMixin, TestCase):
 
-    def test_create_from_name(self):
-        metadata = models.BlobMetadata.objects.create(
-            id="c0d11342c4241087e3c126f7666d618586e39068", name="my_pic.jpg",
-        )
-        self.assertEqual(metadata.mimetype, "image/jpeg")
+    def guess_mimetype_from_name(self):
+        mimetype = models.guess_mimetype(name="my_pic.jpg")
+        self.assertEqual(mimetype, "image/jpeg")
 
     def test_create_from_content(self):
         repository = wrappers.Repository(self.location)
         blob = repository['257cc5642cb1a054f08cc83f2d943e56fd3ebe99']
-        metadata = models.BlobMetadata.objects.create(
-            id="257cc5642cb1a054f08cc83f2d943e56fd3ebe99", buffer=blob.data,
-        )
-        self.assertEqual(metadata.mimetype, "text/plain")
+        mimetype = models.guess_mimetype(buffer=blob.data)
+        self.assertEqual(mimetype, "text/plain")
 
 
 class BlobMetadataTestCase(TestCase):
