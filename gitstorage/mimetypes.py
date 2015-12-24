@@ -23,8 +23,8 @@ import mimetypes
 mimetypes.init()
 for mimetype, ext in [
     ("image/x-xcf", ".xcf"),
-    ("image/x-pef", ".pef"),
-    ("image/x-rw2", ".rw2"),
+    ("image/x-pentax-pef", ".pef"),
+    ("image/x-panasonic-rw2", ".rw2"),
 ]:
     mimetypes.add_type(mimetype, ext)
 
