@@ -40,9 +40,8 @@ class Command(BaseCommand):
                 if entry.hex in known_blobs:
                     continue
                 blob = repository[entry.id]
-                metadata = models.get_blob_metadata_model()()
-                metadata.id = entry.hex
-                metadata.mimetype = models.guess_mimetype(name=entry.name, buffer=blob.data)
+                metadata = models.get_blob_metadata_model()(id=entry.hex)
+                metadata.fill(repository, entry.name, blob)
                 metadata.save()
                 known_blobs.add(entry.hex)
 

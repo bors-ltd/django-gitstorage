@@ -60,6 +60,10 @@ class BaseObjectMetadata(models.Model):
     id = models.CharField(_("id"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
     mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
 
+    def fill(self, repository, name, blob, **kwargs):
+        if self.mimetype is None:
+            self.mimetype = guess_mimetype(name=name, buffer=blob.data)
+
     class Meta:
         abstract = True
 
