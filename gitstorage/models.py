@@ -25,6 +25,16 @@ from . import utils
 from . import validators
 
 
+def guess_mimetype(name=None, buffer=None):
+    mimetype = None
+    if name is not None:
+        mimetype = mimetypes.guess_type(name)[0]
+    # Mimetype guessing on name is not more accurate but more easily extensible
+    if mimetype is None and buffer is not None:
+        mimetype = magic.from_buffer(buffer, mime=True).decode()
+    return mimetype
+
+
 class BaseObjectMetadata(models.Model):
     id = models.CharField(_("id"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
     mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
@@ -44,14 +54,10 @@ class TreeMetadata(BaseObjectMetadata):
 
 class BlobMetadataManager(models.Manager):
 
-    def create_from_name(self, name, id, **kwargs):
-        mimetype = mimetypes.guess_type(name)[0]
-        return self.create(id=id, mimetype=mimetype, **kwargs)
-
-    def create_from_content(self, repository, id, **kwargs):
-        blob = repository[id]
-        mimetype = magic.from_buffer(blob.data, mime=True).decode()
-        return self.create(id=id, mimetype=mimetype, **kwargs)
+    def create(self, id=None, mimetype=None, name=None, buffer=None, **kwargs):
+        if mimetype is None:
+            mimetype = guess_mimetype(name=name, buffer=buffer)
+        return super().create(id=id, mimetype=mimetype, **kwargs)
 
 
 class BlobMetadata(BaseObjectMetadata):

@@ -239,7 +239,7 @@ class UploadViewMixin(TreeViewMixin):
 
         # Sync metadata
         blob = self.storage.repository.open(path)
-        models.BlobMetadata.objects.create_from_content(self.storage.repository, blob.hex)
+        models.BlobMetadata.objects.create(id=blob.hex, name=f.name, buffer=blob.data)
 
         return super().form_valid(form)
 
