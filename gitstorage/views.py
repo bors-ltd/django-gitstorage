@@ -156,26 +156,30 @@ class BlobViewMixin(ObjectViewMixin):
 
 class PreviewViewMixin(BlobViewMixin):
 
-    def get(self, request, *args, **kwargs):
-        content = self.storage.open(self.path)
-        # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
-        filename = unicodedata.normalize('NFKC', self.path.name)
+    def get_content(self):
+        return self.storage.open(self.path)
 
-        response = StreamingHttpResponse(content, content_type=self.metadata.mimetype)
-        response['Content-Disposition'] = "inline; filename=%s" % (filename,)
+    def get_filename(self):
+        # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
+        return unicodedata.normalize('NFKC', self.path.name)
+
+    def get_content_type(self):
+        return self.metadata.mimetype
+
+    def get_content_disposition(self):
+        return "inline; filename=%s" % (self.get_filename(),)
+
+    def get(self, request, *args, **kwargs):
+        content = self.get_content()
+        response = StreamingHttpResponse(content, content_type=self.get_content_type())
+        response['Content-Disposition'] = self.get_content_disposition()
         return response
 
 
-class DownloadViewMixin(BlobViewMixin):
+class DownloadViewMixin(PreviewViewMixin):
 
-    def get(self, request, *args, **kwargs):
-        content = self.storage.open(self.path)
-        # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
-        filename = unicodedata.normalize('NFKC', self.path.name)
-
-        response = StreamingHttpResponse(content, content_type=self.metadata.mimetype)
-        response['Content-Disposition'] = "attachment; filename=%s" % (filename,)
-        return response
+    def get_content_disposition(self):
+        return "attachment; filename=%s" % (self.get_filename(),)
 
 
 class DeleteViewMixin(BlobViewMixin):
