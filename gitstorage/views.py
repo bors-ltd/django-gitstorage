@@ -124,7 +124,8 @@ class ObjectViewMixin(object):
         if not storage:
             storage = git_storage.GitStorage()
         self.storage = storage
-        self.storage.set_author(request.user)
+        if request.user.is_authenticated():
+            self.storage.set_author(request.user)
 
         if not git_obj:
             try:

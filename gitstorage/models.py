@@ -94,19 +94,18 @@ class TreePermissionManager(models.Manager):
         return self.filter(parent_path=path.parent_path, name=path.name, **kwargs).select_related('user')
 
     def allowed_names(self, user, parent_path, **kwargs):
-        if user.is_anonymous():
-            # Reads as none allowed
-            return []
-        elif user.is_superuser:
-            # Reads as not applicable
+        if user.is_superuser:
+            # Reads as all
             return None
+        if user.is_anonymous():
+            user = None
         return self.filter(parent_path=parent_path, user=user, **kwargs).values_list('name', flat=True)
 
     def is_allowed(self, user, path, **kwargs):
-        if user.is_anonymous():
-            return False
-        elif user.is_superuser:
+        if user.is_superuser:
             return True
+        if user.is_anonymous():
+            user = None
         return self.filter(parent_path=path.parent_path, name=path.name, user=user, **kwargs).exists()
 
     def add(self, users, path):
@@ -122,7 +121,7 @@ class TreePermission(models.Model):
                                    validators=[validators.path_validator])
     name = models.CharField(_("name"), max_length=256, db_index=True, blank=True,
                             validators=[validators.name_validator])
-    user = models.ForeignKey(auth_models.User)
+    user = models.ForeignKey(auth_models.User, null=True, blank=True)  # For anonymous user
 
     objects = TreePermissionManager()
 
