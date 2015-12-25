@@ -288,7 +288,7 @@ class AdminPermissionMixin(object):
     def check_permissions(self):
         if not self.request.user.is_superuser:
             raise PermissionDenied()
-        super().check_permissions()
+        # This is the only condition, permissions don't make sense once you're admin
 
 
 class BaseRepositoryView(ObjectViewMixin, generic_views.View):
