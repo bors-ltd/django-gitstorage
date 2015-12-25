@@ -95,25 +95,38 @@ class TreePermissionManager(models.Manager):
 
     def allowed_names(self, user, parent_path, **kwargs):
         if user.is_superuser:
-            # Reads as all
+            # Reads as no restriction
             return None
-        if user.is_anonymous():
+        if not user.is_authenticated():
             user = None
         return self.filter(parent_path=parent_path, user=user, **kwargs).values_list('name', flat=True)
+
+    def for_user(self, user, path, **kwargs):
+        if not user.is_authenticated():
+            user = None
+        return self.filter(user=user, parent_path=path.parent_path, name=path.name, **kwargs)
+
+    def other_permissions(self, user, path, **kwargs):
+        if not user.is_authenticated():
+            user = None
+        return self.filter(user=user, parent_path=path.parent_path, **kwargs).exclude(name=path.name).exists()
 
     def is_allowed(self, user, path, **kwargs):
         if user.is_superuser:
             return True
-        if user.is_anonymous():
-            user = None
-        return self.filter(parent_path=path.parent_path, name=path.name, user=user, **kwargs).exists()
+        return self.for_user(user, path, **kwargs).exists()
 
     def add(self, users, path):
         for user in users:
             self.get_or_create(parent_path=path.parent_path, name=path.name, user=user)
 
     def remove(self, users, path):
-        self.filter(parent_path=path.parent_path, name=path.name, user__in=users).delete()
+        # Does not work for [None]
+        if None in users:
+            for user in users:
+                self.filter(parent_path=path.parent_path, name=path.name, user=user).delete()
+        else:
+            self.filter(parent_path=path.parent_path, name=path.name, user__in=users).delete()
 
 
 class TreePermission(models.Model):

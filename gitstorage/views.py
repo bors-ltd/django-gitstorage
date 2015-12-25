@@ -64,8 +64,7 @@ class ObjectViewMixin(object):
 
         Should be in TreeViewMixin buy we want the root trees on every page.
         """
-        user = self.request.user
-        allowed_names = models.TreePermission.objects.allowed_names(user, path)
+        allowed_names = models.TreePermission.objects.allowed_names(self.request.user, path)
         filtered = []
 
         trees, _blobs = self.storage.listdir(path)
