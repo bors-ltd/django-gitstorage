@@ -102,6 +102,16 @@ class TreePermissionManager(models.Manager):
                 user = None
         return self.filter(parent_path=parent_path, user=user, **kwargs).values_list('name', flat=True)
 
+    def allowed_paths(self, user):
+        if user:
+            if user.is_superuser:
+                # Reads as no restriction
+                return None
+            if not user.is_authenticated():
+                user = None
+        all_permissions = self.filter(user=user).values_list('parent_path', 'name')
+        return [parent_path + "/" + name for parent_path, name in all_permissions]
+
     def for_user(self, user, path, **kwargs):
         if user:
             if not user.is_authenticated():
