@@ -94,26 +94,30 @@ class TreePermissionManager(models.Manager):
         return self.filter(parent_path=path.parent_path, name=path.name, **kwargs).select_related('user')
 
     def allowed_names(self, user, parent_path, **kwargs):
-        if user.is_superuser:
-            # Reads as no restriction
-            return None
-        if not user.is_authenticated():
-            user = None
+        if user:
+            if user.is_superuser:
+                # Reads as no restriction
+                return None
+            if not user.is_authenticated():
+                user = None
         return self.filter(parent_path=parent_path, user=user, **kwargs).values_list('name', flat=True)
 
     def for_user(self, user, path, **kwargs):
-        if not user.is_authenticated():
-            user = None
+        if user:
+            if not user.is_authenticated():
+                user = None
         return self.filter(user=user, parent_path=path.parent_path, name=path.name, **kwargs)
 
     def other_permissions(self, user, path, **kwargs):
-        if not user.is_authenticated():
-            user = None
+        if user:
+            if not user.is_authenticated():
+                user = None
         return self.filter(user=user, parent_path=path.parent_path, **kwargs).exclude(name=path.name).exists()
 
     def is_allowed(self, user, path, **kwargs):
-        if user.is_superuser:
-            return True
+        if user:
+            if user.is_superuser:
+                return True
         return self.for_user(user, path, **kwargs).exists()
 
     def add(self, users, path):
