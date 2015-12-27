@@ -41,6 +41,8 @@ class Command(BaseCommand):
                     continue
                 blob = repository[entry.id]
                 metadata = models.get_blob_metadata_model()(id=entry.hex)
+                metadata.save()
+                # Now we have saved, the instance have an ID for relations
                 metadata.fill(repository, entry.name, blob)
                 metadata.save()
                 known_blobs.add(entry.hex)
