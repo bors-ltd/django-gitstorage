@@ -50,7 +50,7 @@ class ObjectViewMixin(object):
 
     def check_object_type(self):
         """Some views only apply to blobs, other to trees."""
-        logger.debug("check_object_type object=%s type=%s", self.object, self.object.type)
+        logger.debug("check_object_type object=%s type=%s", self.object.hex, self.object.type)
         if self.object.type not in self.allowed_types:
             raise Http404()
 

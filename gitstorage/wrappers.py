@@ -21,6 +21,27 @@ Wrappers with enhanced methods around pygit2 objects.
 import pygit2
 
 
+class BlobWrapper(object):
+    """A lazy blob object that only loads data on demand."""
+    _blob = None
+
+    def __init__(self, repository, id):
+        self._repository = repository
+        self.id = id
+        self.hex = str(id)
+        self.type = pygit2.GIT_OBJ_BLOB
+
+        def _load_blob():
+            raise ValueError()
+            if self._blob is None:
+                self._blob = self.repository[self.id]
+            return self._blob
+
+        def __getattr__(self, item):
+            blob = self._load_blob()
+            return getattr(blob, item)
+
+
 class Repository(pygit2.Repository):
 
     def __init__(self, *args):
@@ -50,4 +71,8 @@ class Repository(pygit2.Repository):
             return self.tree
 
         tree_entry = self.tree[path]
+
+        if tree_entry.type == 'blob':
+            return BlobWrapper(self, tree_entry.id)
+
         return self[tree_entry.id]
