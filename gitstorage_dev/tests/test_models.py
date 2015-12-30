@@ -75,16 +75,16 @@ class TreePermissionManagerTestCase(TestCase):
 
     def test_allowed_names(self):
         allowed_names = models.TreePermission.objects.allowed_names(self.anonymous, "my/path")
-        self.assertListEqual(allowed_names, [])
+        self.assertEqual(list(allowed_names), [])
 
         allowed_names = models.TreePermission.objects.allowed_names(self.superuser, "my/path")
         self.assertIsNone(allowed_names)
 
         allowed_names = models.TreePermission.objects.allowed_names(self.user, "my/path")
-        self.assertListEqual(list(allowed_names), ["my_name"])
+        self.assertEqual(list(allowed_names), ["my_name"])
 
         allowed_names = models.TreePermission.objects.allowed_names(self.other_user, "my/path")
-        self.assertListEqual(list(allowed_names), [])
+        self.assertEqual(list(allowed_names), [])
 
     def test_is_allowed(self):
         path = utils.Path("my/path/my_name")

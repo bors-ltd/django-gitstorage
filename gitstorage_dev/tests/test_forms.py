@@ -36,7 +36,7 @@ class UsersChoiceFieldTestCase(TestCase):
         user = factories.UserFactory(first_name="John", last_name="Doe", email="john.doe@example.com")
         field = forms.UsersChoiceField()
         choice = field.choices.choice(user)
-        self.assertTupleEqual(choice, (user.pk, "John Doe <john.doe@example.com>"))
+        self.assertEqual(choice, (user.pk, "John Doe <john.doe@example.com>"))
 
 
 class RemoveUsersFormTestCase(TestCase):
