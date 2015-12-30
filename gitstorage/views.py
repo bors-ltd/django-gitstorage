@@ -243,7 +243,8 @@ class UploadViewMixin(TreeViewMixin):
 
         # Sync metadata
         blob = self.storage.repository.open(path)
-        metadata = models.get_blob_metadata_model()(id=blob.hex)
+        metadata = models.get_blob_metadata_model()(id=blob.hex, size=blob.size)
+        metadata.save()
         metadata.fill(self.storage.repository, f.name, blob)
         metadata.save()
 

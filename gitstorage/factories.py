@@ -51,6 +51,9 @@ class SuperUserFactory(UserFactory):
 
 
 class BlobMetadataFactory(factory.DjangoModelFactory):
+    size = 0
+    mimetype = None
+
     class Meta:
         model = models.BlobMetadata
 
@@ -60,8 +63,6 @@ class BlobMetadataFactory(factory.DjangoModelFactory):
 class TreeMetadataFactory(factory.DjangoModelFactory):
     class Meta:
         model = models.TreeMetadata
-
-    mimetype = None
 
     @classmethod
     def _generate_next_sequence(cls):
