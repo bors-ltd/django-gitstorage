@@ -52,12 +52,9 @@ class SuperUserFactory(UserFactory):
 
 class BlobMetadataFactory(factory.DjangoModelFactory):
     size = 0
-    mimetype = None
 
     class Meta:
         model = models.BlobMetadata
-
-    mimetype = "text/plain"
 
 
 class TreeMetadataFactory(factory.DjangoModelFactory):
