@@ -32,7 +32,6 @@ class BlobWrapper(object):
         self.type = pygit2.GIT_OBJ_BLOB
 
         def _load_blob():
-            raise ValueError()
             if self._blob is None:
                 self._blob = self.repository[self.id]
             return self._blob
