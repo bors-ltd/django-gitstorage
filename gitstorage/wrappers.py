@@ -31,14 +31,14 @@ class BlobWrapper(object):
         self.hex = str(id)
         self.type = pygit2.GIT_OBJ_BLOB
 
-        def _load_blob():
-            if self._blob is None:
-                self._blob = self.repository[self.id]
-            return self._blob
+    def _load_blob(self):
+        if self._blob is None:
+            self._blob = self.repository[self.id]
+        return self._blob
 
-        def __getattr__(self, item):
-            blob = self._load_blob()
-            return getattr(blob, item)
+    def __getattr__(self, item):
+        blob = self._load_blob()
+        return getattr(blob, item)
 
 
 class Repository(pygit2.Repository):
