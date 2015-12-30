@@ -21,7 +21,7 @@ import unicodedata
 
 from django import forms as django_forms
 from django.core.exceptions import PermissionDenied
-from django.http.response import Http404, FileResponse
+from django.http.response import Http404, StreamingHttpResponse
 from django.utils.decorators import classonlymethod
 from django.views import generic as generic_views
 
@@ -171,7 +171,7 @@ class PreviewViewMixin(BlobViewMixin):
 
     def get(self, request, *args, **kwargs):
         content = self.get_content()
-        response = FileResponse(content, content_type=self.get_content_type())
+        response = StreamingHttpResponse(content, content_type=self.get_content_type())
         response['Content-Disposition'] = self.get_content_disposition()
         return response
 
