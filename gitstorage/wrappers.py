@@ -33,7 +33,7 @@ class BlobWrapper(object):
 
     def _load_blob(self):
         if self._blob is None:
-            self._blob = self.repository[self.id]
+            self._blob = self._repository[self.id]
         return self._blob
 
     def __getattr__(self, item):
