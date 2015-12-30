@@ -232,6 +232,8 @@ class GitStorage(storage.Storage):
         """Return the size of the blob at the given path name.
 
             @param: name: file path, relative to the repository root
+
+        Warning: the blob data will be loaded into memory.
         """
         path = self._git_path(name)
         blob = self.repository.open(path)

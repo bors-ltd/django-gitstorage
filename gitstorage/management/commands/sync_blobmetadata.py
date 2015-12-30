@@ -40,7 +40,7 @@ class Command(BaseCommand):
                 if entry.hex in known_blobs:
                     continue
                 blob = repository[entry.id]
-                metadata = models.get_blob_metadata_model()(id=entry.hex)
+                metadata = models.get_blob_metadata_model()(id=entry.hex, size=blob.size)
                 metadata.save()
                 # Now we have saved, the instance have an ID for relations
                 metadata.fill(repository, entry.name, blob)

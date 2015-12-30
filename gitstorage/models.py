@@ -58,11 +58,6 @@ def guess_mimetype(name=None, buffer=None):
 
 class BaseObjectMetadata(models.Model):
     id = models.CharField(_("id"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
-    mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
-
-    def fill(self, repository, name, blob, **kwargs):
-        if self.mimetype is None:
-            self.mimetype = guess_mimetype(name=name, buffer=blob.data)
 
     class Meta:
         abstract = True
@@ -77,15 +72,34 @@ class TreeMetadata(BaseObjectMetadata):
         return "{0.id}".format(self)
 
 
-class BlobMetadata(BaseObjectMetadata):
+class BaseBlobMetadata(BaseObjectMetadata):
+    # Cached properties to avoid loading the blob
+    size = models.PositiveIntegerField(verbose_name=_(u"Size"))
+
+    # Extra properties that must be optional (they are filled after the initial creation)
+    mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
+
+    def fill(self, repository, name, blob, **kwargs):
+        """Method called after creation of the object to fill extra properties: mimetype, ...
+
+        Override to fill your own extra fields and call this parent.
+        """
+        if self.mimetype is None:
+            self.mimetype = guess_mimetype(name=name, buffer=blob.data)
 
     class Meta:
         verbose_name = _("blob metadata")
         verbose_name_plural = _("blob metadata")
-        swappable = 'GIT_STORAGE_BLOB_METADATA_MODEL'
+        abstract = True
 
     def __str__(self):
         return "{0.id} type={0.mimetype}".format(self)
+
+
+class BlobMetadata(BaseBlobMetadata):
+
+    class Meta:
+        swappable = 'GIT_STORAGE_BLOB_METADATA_MODEL'
 
 
 class TreePermissionManager(models.Manager):
