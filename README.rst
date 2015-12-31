@@ -15,11 +15,11 @@ GitStorage is:
 
 - `Management commands`_;
 
-- `Hooks`_.
+- `Git hooks`_.
 
-GitStorage is built on top of `PyGit2`_ and `libgit2`_, it does not call Git from the command line.
+GitStorage is built on top of `pygit2`_ and `libgit2`_, it does not call Git from the command line.
 
-.. _`PyGit2`: http://www.pygit2.org/
+.. _`pygit2`: http://www.pygit2.org/
 
 .. _`libgit2`: http://libgit2.github.com/
 
@@ -42,12 +42,15 @@ Models
 BlobMetadata
 """"""""""""
 
-Add metadata to the blob, only mimetype for now.
+Add metadata to the blob, only mimetype for now. We also store a copy of the size, so we don't have to load the blob
+(and its data) for it.
 
 TreePermission
 """"""""""""""
 
-Only admin users are allowed by default. Share access to a tree and its blobs (but not its subtrees) to a regular user.
+Only super users are allowed by default. Share access to a tree and its blobs (but not its subtrees) to a regular user.
+
+Anonymous users are supported too, with the idea of allowing access to individual blobs, rather than the whole tree.
 
 Views
 -----
@@ -58,39 +61,43 @@ and your own business logic.
 BaseRepositoryView
 """"""""""""""""""
 
-The main view that dispatches to a view dedicated to each Git object type (namely blob and tree).
+The catch-all view that dispatches to a view dedicated to each Git object type (only blob and tree).
 
-The view you will hook on your URL root, with configuring a view for each object type (see below).
+This view will be your URL root, configured with a view for each object type (see below).
 
 TreeViewMixin
 """""""""""""
 
-Default view for a tree object, lists its contents.
+Default view for a tree object, lists its contents, filtered by tree permissions.
 
 BlobViewMixin
 """""""""""""
 
-Default view for a blob object, displays its information.
+Default view for a blob object, displays its information, if allowed by access controls.
 
 PreviewViewMixin
 """"""""""""""""
 
-Preview the current blob in the browser if possible, download it otherwise.
+Preview the current blob data in the browser if possible, download it otherwise.
+
+Previewing an image could mean returning a smaller (in size and weight) image.
 
 DownloadViewMixin
 """""""""""""""""
 
-Force download the current blob.
+Force download the current blob's data.
+
+For our image example, it would mean downloading the original image, not the smaller preview.
 
 DeleteViewMixin
 """""""""""""""
 
-Delete the current blob.
+Delete the current blob from its parent tree (it could still be referenced elsewhere).
 
 UploadViewMixin
 """""""""""""""
 
-Upload a new file to the current tree (as a blob).
+Upload a new file to the current tree (in a blob).
 
 SharesViewMixin
 """""""""""""""
@@ -108,9 +115,9 @@ Management Commands
 sync_blobmetadata
 """""""""""""""""
 
-Browse the repository to compute metadata for each blob not known yet.
+Called by the "update" hook you need to add to your repository (see `Git Hooks`_).
 
-Called by the "update" hook you need to add to your repository (see `Hooks`_).
+Browse the given range of commits to compute metadata for each referenced blob not known yet.
 
 Cleaning up of metadata for orphan blobs is not handled.
 
@@ -124,11 +131,14 @@ Migrations
 
 GitStorage comes with migrations in the new 1.7+ format.
 
-Hooks
------
+Git Hooks
+---------
 
 Gitstorage requires metadata to be created for each blob. Copy ``hooks/update`` to the hooks directory of your
-repository and edit the "VENV" and "DJANGO_SETTINGS_MODULE" variables. You are advised to set "verbose" to true for the first tries.
+repository and edit the "VENV" and "DJANGO_SETTINGS_MODULE" variables. Make sure the script has the executable bit.
+
+You are advised to set "verbose" to true for the first tries.
+
 In fact, feel free to edit this script to suit your needs and deployment of the Django project.
 
 License
