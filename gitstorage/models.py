@@ -124,7 +124,7 @@ class TreePermissionQuerySet(models.QuerySet):
             if not user.is_authenticated():
                 user = None
         all_permissions = self.filter(user=user).values_list('parent_path', 'name')
-        return [parent_path + "/" + name for parent_path, name in all_permissions]
+        return ["/".join(filter(None, segments)) for segments in all_permissions]
 
     def for_user(self, user, path, **kwargs):
         if user:
