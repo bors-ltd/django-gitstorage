@@ -102,7 +102,7 @@ class BlobMetadata(BaseBlobMetadata):
         swappable = 'GIT_STORAGE_BLOB_METADATA_MODEL'
 
 
-class TreePermissionManager(models.Manager):
+class TreePermissionQuerySet(models.QuerySet):
 
     def current_permissions(self, path, **kwargs):
         return self.filter(parent_path=path.parent_path, name=path.name, **kwargs).select_related('user')
@@ -164,7 +164,7 @@ class TreePermission(models.Model):
                             validators=[validators.name_validator])
     user = models.ForeignKey(auth_models.User, null=True, blank=True)  # For anonymous user
 
-    objects = TreePermissionManager()
+    objects = TreePermissionQuerySet.as_manager()
 
     class Meta:
         verbose_name = _("tree permission")
