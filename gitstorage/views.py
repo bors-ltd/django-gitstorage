@@ -19,7 +19,6 @@ import logging
 import operator
 import unicodedata
 
-from django import forms as django_forms
 from django.core.exceptions import PermissionDenied
 from django.http.response import Http404, StreamingHttpResponse
 from django.utils.decorators import classonlymethod
@@ -29,11 +28,13 @@ import pygit2
 
 from . import forms
 from . import models
-from . import storage as git_storage
+from . import repository
 from .utils import Path
 
 
 logger = logging.getLogger(__name__)
+
+Blob = models.get_blob_model()
 
 
 class ObjectViewMixin(object):
@@ -43,15 +44,15 @@ class ObjectViewMixin(object):
     """
     allowed_types = ()
     # Attributes available when rendering the view
-    storage = None
+    repo = None
     path = None
+    git_obj = None
     object = None
-    metadata = None
 
     def check_object_type(self):
         """Some views only apply to blobs, other to trees."""
-        logger.debug("check_object_type object=%s type=%s", self.object.hex, self.object.type)
-        if self.object.type not in self.allowed_types:
+        logger.debug("check_object_type git_obj=%s type=%s", self.git_obj.hex, self.git_obj.type)
+        if self.git_obj.type not in self.allowed_types:
             raise Http404()
 
     def check_permissions(self):
@@ -67,7 +68,7 @@ class ObjectViewMixin(object):
         allowed_names = models.TreePermission.objects.allowed_names(self.request.user, path)
         filtered = []
 
-        trees, _blobs = self.storage.listdir(path)
+        trees, _blobs = self.repo.listdir(path)
         for entry in trees:
             # Hide hidden files
             if entry.name[0] == ".":
@@ -77,19 +78,19 @@ class ObjectViewMixin(object):
             filtered.append({
                 'name': entry.name,
                 'path': path.resolve(entry.name),
-                'metadata': models.TreeMetadata(id=entry.hex),
+                'tree': models.Tree(id=entry.hex),
             })
         return sorted(filtered, key=operator.itemgetter('name'))
 
-    def load_metadata(self):
-        """Each object type has its own metadata model.
+    def load_object(self):
+        """Each Git object type has its own Django model.
 
-        Trees have an in-memory metadata built on the fly.
+        Trees are in-memory objects built on the fly.
         """
-        if self.object.type is pygit2.GIT_OBJ_BLOB:
-            self.metadata = models.get_blob_metadata_model().objects.get(pk=self.object.hex)
-        elif self.object.type is pygit2.GIT_OBJ_TREE:
-            self.metadata = models.TreeMetadata(pk=self.object.hex)
+        if self.git_obj.type is pygit2.GIT_OBJ_BLOB:
+            self.object = Blob.objects.get(pk=self.git_obj.hex)
+        elif self.git_obj.type is pygit2.GIT_OBJ_TREE:
+            self.object = models.Tree(pk=self.git_obj.hex)
 
     def get_context_data(self, **kwargs):
         """Context variables for any type of Git object and on every page."""
@@ -104,15 +105,15 @@ class ObjectViewMixin(object):
             path = Path(path.parent_path)
 
         context['path'] = self.path
+        context['git_obj'] = self.git_obj
         context['object'] = self.object
-        context['metadata'] = self.metadata
         context['root_trees'] = root_trees
         context['breadcrumbs'] = breadcrumbs
         return context
 
-    def dispatch(self, request, path, storage=None, git_obj=None, *args, **kwargs):
+    def dispatch(self, request, path, repo=None, git_obj=None, *args, **kwargs):
         """Filtering of hidden files and setting the instance attributes before dispatching."""
-        logger.debug("dispatch self=%s path=%s object=%s args=%s kwargs=%s", self, path, git_obj, args, kwargs)
+        logger.debug("dispatch self=%s path=%s git_obj=%s args=%s kwargs=%s", self, path, git_obj, args, kwargs)
         path = Path(path)
         self.path = path
 
@@ -120,21 +121,19 @@ class ObjectViewMixin(object):
         if name and name[0] == ".":
             raise PermissionDenied()
 
-        if not storage:
-            storage = git_storage.GitStorage()
-        self.storage = storage
-        if request.user.is_authenticated():
-            self.storage.set_author(request.user)
+        if not repo:
+            repo = repository.Repository()
+        self.repo = repo
 
         if not git_obj:
             try:
-                git_obj = self.storage.repository.open(path)
+                git_obj = self.repo.open(path)
             except KeyError:
                 raise Http404()
 
-        self.object = git_obj
+        self.git_obj = git_obj
         self.check_object_type()
-        self.load_metadata()
+        self.load_object()
 
         logger.debug("calling check_permissions %s", self.check_permissions)
         self.check_permissions()
@@ -157,14 +156,14 @@ class BlobViewMixin(ObjectViewMixin):
 class PreviewViewMixin(BlobViewMixin):
 
     def get_content(self):
-        return self.storage.open(self.path)
+        return self.object.file
 
     def get_filename(self):
         # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
         return unicodedata.normalize('NFKC', self.path.name)
 
     def get_content_type(self):
-        return self.metadata.mimetype
+        return self.object.mimetype
 
     def get_content_disposition(self):
         return "inline; filename=%s" % (self.get_filename(),)
@@ -182,15 +181,6 @@ class DownloadViewMixin(PreviewViewMixin):
         return "attachment; filename=%s" % (self.get_filename(),)
 
 
-class DeleteViewMixin(BlobViewMixin):
-    form_class = django_forms.Form  # Dummy form just to follow FormMixin API
-
-    def form_valid(self, form):
-        self.storage.delete(self.path)
-
-        return super().form_valid(form)
-
-
 class TreeViewMixin(ObjectViewMixin):
     """View that applies only to trees.
 
@@ -204,7 +194,7 @@ class TreeViewMixin(ObjectViewMixin):
 
     def filter_blobs(self):
         hex_to_name = {}
-        _trees, blobs = self.storage.listdir(self.path)
+        _trees, blobs = self.repo.listdir(self.path)
         for entry in blobs:
             # Hide hidden files
             if entry.name[0] == ".":
@@ -212,17 +202,17 @@ class TreeViewMixin(ObjectViewMixin):
             # No check on allowed_names, all blobs are readable if their parent tree is
             hex_to_name[entry.hex] = entry.name
 
-        # Fetch metadata for all of the entries in a single query
-        all_metadata = {}
-        for metadata in models.get_blob_metadata_model().objects.filter(pk__in=hex_to_name.keys()):
-            all_metadata[metadata.pk] = metadata
+        # Fetch blobs for all of the entries in a single query
+        all_blobs = {}
+        for blob in Blob.objects.filter(pk__in=hex_to_name.keys()):
+            all_blobs[blob.pk] = blob
 
         blobs = []
-        for hex, name in hex_to_name.items():
+        for blob_hex, name in hex_to_name.items():
             blobs.append({
                 'name': name,
                 'path': self.path.resolve(name),
-                'metadata': all_metadata[hex],
+                'blob': all_blobs[blob_hex],
             })
         return sorted(blobs, key=operator.itemgetter('name'))
 
@@ -231,24 +221,6 @@ class TreeViewMixin(ObjectViewMixin):
         context['trees'] = self.filter_trees(self.path)
         context['blobs'] = self.filter_blobs()
         return context
-
-
-class UploadViewMixin(TreeViewMixin):
-    form_class = forms.UploadForm
-
-    def form_valid(self, form):
-        f = form.cleaned_data['file']
-        path = self.path.resolve(f.name)
-        self.storage.save(path, f)
-
-        # Sync metadata
-        blob = self.storage.repository.open(path)
-        metadata = models.get_blob_metadata_model()(id=blob.hex, size=blob.size)
-        metadata.save()
-        metadata.fill(self.storage.repository, f.name, blob)
-        metadata.save()
-
-        return super().form_valid(form)
 
 
 class SharesViewMixin(TreeViewMixin):
@@ -323,7 +295,7 @@ class BaseRepositoryView(ObjectViewMixin, generic_views.View):
 
         def view(request, path, *args, **kwargs):
             # BEGIN gitstorage specific
-            storage = kwargs['storage'] = git_storage.GitStorage()
+            repo = kwargs['repo'] = repository.Repository()
 
             # Path methods must be mapped in the URLconf
             path = Path(path)
@@ -331,7 +303,7 @@ class BaseRepositoryView(ObjectViewMixin, generic_views.View):
                 raise Http404()
 
             try:
-                git_obj = kwargs['git_obj'] = storage.repository.open(path)
+                git_obj = kwargs['git_obj'] = repo.open(path)
             except KeyError:
                 raise Http404()
 

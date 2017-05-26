@@ -13,6 +13,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
+import io
+
 from django.core.exceptions import ImproperlyConfigured
 from django.test.testcases import TestCase
 from django.test.utils import override_settings
@@ -20,44 +22,46 @@ from django.test.utils import override_settings
 from gitstorage import factories
 from gitstorage import models
 from gitstorage import utils
-from gitstorage import wrappers
+from gitstorage import repository
 from gitstorage.tests import utils as tests_utils
 
 
-class BlobMetadataManagerTestCase(tests_utils.VanillaRepositoryMixin, TestCase):
+class BlobManagerTestCase(tests_utils.VanillaRepositoryMixin, TestCase):
 
     def guess_mimetype_from_name(self):
         mimetype = models.guess_mimetype(name="my_pic.jpg")
         self.assertEqual(mimetype, "image/jpeg")
 
     def test_create_from_content(self):
-        repository = wrappers.Repository(self.location)
-        blob = repository['257cc5642cb1a054f08cc83f2d943e56fd3ebe99']
+        repo = repository.Repository()
+        blob = repo['257cc5642cb1a054f08cc83f2d943e56fd3ebe99']
         mimetype = models.guess_mimetype(buffer=blob.data)
         self.assertEqual(mimetype, "text/plain")
 
 
-class BlobMetadataTestCase(TestCase):
+class BlobTestCase(TestCase):
 
     def setUp(self):
-        self.metadata = factories.BlobMetadataFactory(id="c0d11342c4241087e3c126f7666d618586e39068",
-                                                      mimetype="image/jpeg")
+        self.blob = factories.BlobFactory(
+            id="c0d11342c4241087e3c126f7666d618586e39068",
+            mimetype="image/jpeg"
+        )
 
     def test_swapped_model(self):
-        with override_settings(GIT_STORAGE_BLOB_METADATA_MODEL="project.DummyMetadata"):
-            self.assertRaises(ImproperlyConfigured, models.get_blob_metadata_model)
+        with override_settings(GIT_STORAGE_BLOB_MODEL="project.DummyBlob"):
+            self.assertRaises(ImproperlyConfigured, models.get_blob_model)
 
     def test_str(self):
-        self.assertEqual(str(self.metadata), "c0d11342c4241087e3c126f7666d618586e39068 type=image/jpeg")
+        self.assertEqual(str(self.blob), "c0d11342c4241087e3c126f7666d618586e39068 type=image/jpeg")
 
 
-class TreeMetadataTestCase(TestCase):
+class TreeTestCase(TestCase):
 
     def setUp(self):
-        self.metadata = factories.TreeMetadataFactory.build(id="c0d11342c4241087e3c126f7666d618586e39068")
+        self.tree = factories.TreeFactory.build(id="c0d11342c4241087e3c126f7666d618586e39068")
 
     def test_str(self):
-        self.assertEqual(str(self.metadata), "c0d11342c4241087e3c126f7666d618586e39068")
+        self.assertEqual(str(self.tree), "c0d11342c4241087e3c126f7666d618586e39068")
 
 
 class TreePermissionManagerTestCase(TestCase):

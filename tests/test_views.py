@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
+
 import pygit2
 
 from django.core.exceptions import PermissionDenied
@@ -24,7 +25,7 @@ from django.test.client import RequestFactory
 
 from gitstorage import factories
 from gitstorage import models
-from gitstorage import storage
+from gitstorage import repository
 from gitstorage.utils import Path
 from gitstorage.tests.utils import VanillaRepositoryMixin
 
@@ -36,7 +37,7 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.storage = storage.GitStorage(self.location)
+        self.repo = repository.Repository()
 
         if self.path is None:
             raise ValueError("Forgot to declare a path!")
@@ -45,10 +46,10 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
         self.user = factories.UserFactory(password="password")
         self.client.login(username=self.user.username, password="password")
 
-        git_obj = self.storage.repository.open(self.path)
+        git_obj = self.repo.open(self.path)
 
         if git_obj.type == pygit2.GIT_OBJ_BLOB:
-            self.blob = git_obj
+            self.git_obj = git_obj
 
             # Permission to parent path
             parent = Path(self.path.parent_path)
@@ -56,11 +57,16 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
                 parent_path=parent.parent_path, name=parent.name, user=self.user
             )
 
-            # Blob metadata
-            self.metadata = factories.BlobMetadataFactory(id=self.blob.hex, mimetype="text/plain")
+            # Blob object
+            self.blob = factories.BlobFactory(
+                id=self.git_obj.hex,
+                size=self.git_obj.size,
+                file=SimpleUploadedFile(self.path.name, self.git_obj.data),
+                mimetype="text/plain",
+            )
 
         elif git_obj.type == pygit2.GIT_OBJ_TREE:
-            self.tree = git_obj
+            self.git_obj = git_obj
 
             # Permission to itself
             factories.TreePermissionFactory(parent_path=self.path.parent_path, name=self.path.name, user=self.user)
@@ -84,44 +90,6 @@ class DownloadViewTestCase(BaseViewTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Disposition'], "attachment; filename=dépôt.txt")
         self.assertContains(response, "de\u0301po\u0302t")
-
-
-class DeleteViewTestCase(BaseViewTestCase):
-    path = "foo/bar/baz/qux.txt"
-
-    def test_get(self):
-        response = self.client.get(reverse('blob_delete', args=[self.path]))
-        self.assertEqual(response.status_code, 200)
-
-    def test_post(self):
-        response = self.client.post(reverse('blob_delete', args=[self.path]))
-        self.assertEqual(response.status_code, 302)
-        self.assertFalse(self.storage.exists(self.path))
-
-
-class UploadViewTestCase(BaseViewTestCase):
-    path = "foo/bar/baz"
-
-    def setUp(self):
-        super().setUp()
-        # A blob found in the path
-        self.blob = self.storage.repository.open("foo/bar/baz/qux.txt")
-        self.blob_metadata = factories.BlobMetadataFactory(id=self.blob.hex)
-
-    def test_get(self):
-        response = self.client.get(reverse('tree_upload', args=[self.path]))
-        self.assertEqual(response.status_code, 200)
-
-    def test_post(self):
-        response = self.client.post(reverse('tree_upload', args=[self.path]))
-        self.assertEqual(response.status_code, 200)
-
-        data = {'file': SimpleUploadedFile("toto.jpg", b"\xff\xd8\xff\xe0\x00\x10JFIF")}
-        response = self.client.post(reverse('tree_upload', args=[self.path]), data=data)
-        self.assertEqual(response.status_code, 302)
-
-        blob = self.storage.repository.open("foo/bar/baz/toto.jpg")
-        self.assertTrue(models.BlobMetadata.objects.filter(id=blob.hex, mimetype="image/jpeg").exists())
 
 
 class SharesViewTestCase(BaseViewTestCase):
@@ -181,7 +149,7 @@ class BlobViewTestCase(BaseViewTestCase):
     path = "foo/bar/baz/qux.txt"
 
     def test_object_type(self):
-        view = views.TestBlobView(object=self.blob)
+        view = views.TestBlobView(git_obj=self.git_obj)
         self.assertIsNone(view.check_object_type())
         view.allowed_types = ()
         self.assertRaises(Http404, view.check_object_type)
@@ -192,8 +160,8 @@ class BlobViewTestCase(BaseViewTestCase):
         response = self.client.get(reverse('repo_browse', args=[self.path]))
         context = response.context
         self.assertEqual(context['path'], self.path)
+        self.assertEqual(context['git_obj'].id, self.git_obj.id)
         self.assertEqual(context['object'].id, self.blob.id)
-        self.assertEqual(context['metadata'].id, self.metadata.id)
         self.assertEqual(list(context['root_trees']), [])  # No permission on root
         self.assertEqual(context['breadcrumbs'], ["foo", "foo/bar", "foo/bar/baz", "foo/bar/baz/qux.txt"])
 
@@ -226,11 +194,11 @@ class TreeViewTestCase(BaseViewTestCase):
     def setUp(self):
         super().setUp()
         # A blob found in the path
-        self.blob = self.storage.repository.open("foo/bar/baz/qux.txt")
-        self.blob_metadata = factories.BlobMetadataFactory(id=self.blob.hex)
+        git_obj = self.repo.open("foo/bar/baz/qux.txt")
+        self.blob = factories.BlobFactory(id=git_obj.hex)
 
     def test_object_type(self):
-        view = views.TestTreeView(object=self.tree)
+        view = views.TestTreeView(git_obj=self.git_obj)
         self.assertIsNone(view.check_object_type())
         view.allowed_types = ()
         self.assertRaises(Http404, view.check_object_type)
@@ -241,8 +209,8 @@ class TreeViewTestCase(BaseViewTestCase):
         response = self.client.get(reverse('repo_browse', args=[self.path]))
         context = response.context
         self.assertEqual(context['path'], self.path)
-        self.assertEqual(context['object'].hex, self.tree.hex)
-        self.assertEqual(context['metadata'].id, self.tree.hex)
+        self.assertEqual(context['git_obj'].hex, self.git_obj.hex)
+        self.assertEqual(context['object'].id, self.git_obj.hex)
         self.assertEqual(context['root_trees'], [])  # No permission on root
         self.assertEqual(context['breadcrumbs'], ["foo", "foo/bar", "foo/bar/baz"])
         self.assertEqual(context['trees'], [])
@@ -252,7 +220,7 @@ class TreeViewTestCase(BaseViewTestCase):
                 {
                     'name': "qux.txt",
                     'path': "foo/bar/baz/qux.txt",
-                    'metadata': self.blob_metadata,
+                    'blob': self.blob,
                 }
             ]
         )
@@ -285,8 +253,8 @@ class AdminPermissionTestCase(BaseViewTestCase):
     def setUp(self):
         super().setUp()
         # A blob found at the root
-        self.blob = self.storage.repository.open("foo.txt")
-        self.blob_metadata = factories.BlobMetadataFactory(id=self.blob.hex)
+        self.git_obj = self.repo.open("foo.txt")
+        self.blob = factories.BlobFactory(id=self.git_obj.hex)
 
     def test_check_permission(self):
         user = factories.UserFactory(password="pass1")
@@ -305,7 +273,7 @@ class CoverageTestCase(VanillaRepositoryMixin, TestCase):
 
     def setUp(self):
         super().setUp()
-        self.storage = storage.GitStorage(self.location)
+        self.repo = repository.Repository()
 
     def test_initkwargs(self):
         self.assertRaises(TypeError, views.DummyRepositoryView.as_view, get=None)
@@ -331,18 +299,18 @@ class CoverageTestCase(VanillaRepositoryMixin, TestCase):
 
         request = RequestFactory()
         request.user = factories.UserFactory()
-        view = views.DummyAdminDeleteView(request=request, path=Path(""))
+        view = views.DummyAdminShareView(request=request, path=Path(""))
         self.assertRaises(PermissionDenied, view.check_permissions)
 
         request = RequestFactory()
         request.user = factories.SuperUserFactory()
-        view = views.DummyAdminDeleteView(request=request, path=Path(""))
+        view = views.DummyAdminShareView(request=request, path=Path(""))
         self.assertIsNone(view.check_permissions())
 
     def test_filter_hidden(self):
         request = RequestFactory()
         request.user = factories.UserFactory()
-        view = views.DummyTreeView(request=request, path=Path("path/with/hidden"), storage=self.storage)
+        view = views.DummyTreeView(request=request, path=Path("path/with/hidden"), repo=self.repo)
 
         blobs = view.filter_blobs()
         self.assertNotIn(".file", [entry['name'] for entry in blobs])

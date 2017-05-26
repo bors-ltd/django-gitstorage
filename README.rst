@@ -5,17 +5,12 @@ A Django application to browse a Git repository and build Web applications on to
 
 GitStorage is:
 
-- A Django `storage`_ to browse the contents of the repository (what you see in your working copy)
-  from a bare repository (without a working copy);
+- A `Git hook`_ to fill the database when pushing to the repository;
 
-- `Models`_ to enrich Git objects, namely add metadata to blobs and allow access to trees;
+- `Models`_ to represent and enrich Git objects, adding extra fields to blobs and allow access to trees;
 
 - Mixin `views`_ to combine with class-based views to browse the repository and add or remove objects.
   on top of the repository;
-
-- `Management commands`_;
-
-- `Git hooks`_.
 
 GitStorage is built on top of `pygit2`_ and `libgit2`_, it does not call Git from the command line.
 
@@ -23,27 +18,38 @@ GitStorage is built on top of `pygit2`_ and `libgit2`_, it does not call Git fro
 
 .. _`libgit2`: http://libgit2.github.com/
 
+Hopefully some day Git database backends will be more easily accessible with Python wrappers,
+and this project will become a lot simpler.
+
+
 .. contents::
 
-Storage
--------
+Git Hook
+--------
 
-The Django storage supports most of the storage API: open, save, exists, listdir... missing features include mtime,
-ctime and atime since Git doesn't directly store those values.
+The journey starts with the ``hooks/update`` hook to install into the repository being exposed.
 
-The storage is limited just as any Git repository. It is designed for a single writer and many readers. Concurrent
-writing is not even tested. No effort was made to optimise read access either. Your mileage may vary.
+When objects are pushed to this repository, it will call a management command to fill the database with
+new blobs and compute their extra fields.
 
-The storage exposes trees and blobs, and doesn't try to pretend you see dirs and files on a regular filesystem.
+Copy the script to the hooks directory of your repository and edit the "VENV" and "DJANGO_SETTINGS_MODULE" variables.
+Make sure the script has the executable bit.
+
+You are advised to set "verbose" to true for the first tries.
+
+In fact, feel free to edit this script to suit your needs and deployment constraints.
 
 Models
 ------
 
-BlobMetadata
-""""""""""""
+Blob
+""""
 
-Add metadata to the blob, only mimetype for now. We also store a copy of the size, so we don't have to load the blob
-(and its data) for it.
+Git object of type blob with extra fields, only mimetype for now. Note that we don't store the raw data
+but the file contents already extracted. So this file can be served by a front-end web server using X-Accel-Redirect
+and its actual path on the filesystem.
+
+We ignore all other object types.
 
 TreePermission
 """"""""""""""
@@ -89,16 +95,6 @@ Force download the current blob's data.
 
 For our image example, it would mean downloading the original image, not the smaller preview.
 
-DeleteViewMixin
-"""""""""""""""
-
-Delete the current blob from its parent tree (it could still be referenced elsewhere).
-
-UploadViewMixin
-"""""""""""""""
-
-Upload a new file to the current tree (in a blob).
-
 SharesViewMixin
 """""""""""""""
 
@@ -109,17 +105,17 @@ ShareViewMixin
 
 Share access to the current tree to a user by adding a tree permission.
 
-Management Commands
--------------------
+Management Command
+------------------
 
-sync_blobmetadata
-"""""""""""""""""
+sync_blobs
+""""""""""
 
-Called by the "update" hook you need to add to your repository (see `Git Hooks`_).
+Called by the "update" hook you need to add to your repository (see `Git Hook`_).
 
-Browse the given range of commits to compute metadata for each referenced blob not known yet.
+Browse the given range of commits to created missing blobs and compute their extra fields.
 
-Cleaning up of metadata for orphan blobs is not handled.
+Cleaning up of orphan blobs is not handled.
 
 Tests
 -----
@@ -129,17 +125,7 @@ A minimal Django project is shipped to run the test suite. Try ``make coverage``
 Migrations
 ----------
 
-GitStorage comes with migrations in the new 1.7+ format.
-
-Git Hooks
----------
-
-Gitstorage requires metadata to be created for each blob. Copy ``hooks/update`` to the hooks directory of your
-repository and edit the "VENV" and "DJANGO_SETTINGS_MODULE" variables. Make sure the script has the executable bit.
-
-You are advised to set "verbose" to true for the first tries.
-
-In fact, feel free to edit this script to suit your needs and deployment of the Django project.
+GitStorage comes with Django migrations.
 
 License
 -------

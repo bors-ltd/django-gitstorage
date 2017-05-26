@@ -50,16 +50,16 @@ class SuperUserFactory(UserFactory):
     is_superuser = True
 
 
-class BlobMetadataFactory(factory.DjangoModelFactory):
+class BlobFactory(factory.DjangoModelFactory):
     size = 0
 
     class Meta:
-        model = models.BlobMetadata
+        model = models.Blob
 
 
-class TreeMetadataFactory(factory.DjangoModelFactory):
+class TreeFactory(factory.DjangoModelFactory):
     class Meta:
-        model = models.TreeMetadata
+        model = models.Tree
 
     @classmethod
     def _generate_next_sequence(cls):

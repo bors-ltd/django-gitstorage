@@ -19,11 +19,11 @@ from django.contrib import admin
 from . import models
 
 
-class BlobMetadataAdmin(admin.ModelAdmin):
+class BlobAdmin(admin.ModelAdmin):
     search_fields = ['id', 'mimetype']
     list_filter = ['mimetype']
 
-admin.site.register(models.BlobMetadata, BlobMetadataAdmin)
+admin.site.register(models.Blob, BlobAdmin)
 
 
 class TreePermissionAdmin(admin.ModelAdmin):

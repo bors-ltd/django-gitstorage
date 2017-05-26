@@ -36,14 +36,6 @@ class TestDownloadView(views.DownloadViewMixin, generic.TemplateView):
     template_name = "base.html"
 
 
-class TestDeleteView(views.DeleteViewMixin, TestFormViewMixin, generic.FormView):
-    template_name = "base.html"
-
-
-class TestUploadView(views.UploadViewMixin, TestFormViewMixin, generic.FormView):
-    template_name = "base.html"
-
-
 class TestSharesView(views.SharesViewMixin, TestFormViewMixin, generic.FormView):
     template_name = "base.html"
 
@@ -78,7 +70,7 @@ class DummyRepositoryView(views.BaseRepositoryView):
     pass
 
 
-class DummyAdminDeleteView(views.AdminPermissionMixin, views.DeleteViewMixin, generic.View):
+class DummyAdminShareView(views.AdminPermissionMixin, views.ShareViewMixin, generic.View):
     pass
 
 

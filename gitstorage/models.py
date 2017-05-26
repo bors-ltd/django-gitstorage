@@ -28,76 +28,82 @@ from . import utils
 from . import validators
 
 
-def get_blob_metadata_model():
+def get_blob_model():
     """
-    Returns the BlobMetadata model that is active in this project.
+    Returns the Blob model that is active in this project.
     """
     try:
-        return django_apps.get_model(settings.GIT_STORAGE_BLOB_METADATA_MODEL)
+        return django_apps.get_model(settings.GIT_STORAGE_BLOB_MODEL)
     except LookupError:
         raise ImproperlyConfigured(
-            "GIT_STORAGE_BLOB_METADATA_MODEL refers to model '%s' that has not been installed" % (
-                settings.GIT_STORAGE_BLOB_METADATA_MODEL,
+            "GIT_STORAGE_BLOB_MODEL refers to model '%s' that has not been installed" % (
+                settings.GIT_STORAGE_BLOB_MODEL,
             )
         )
     except AttributeError:
-        return BlobMetadata
+        return Blob
 
 
-def guess_mimetype(name=None, buffer=None):
-    mimetype = None
+def guess_mimetype(name=None, file=None, buffer=None):
+    # Mimetype guessing on name is not more accurate but more easily extensible
     if name is not None:
         mimetype = mimetypes.guess_type(name)[0]
-    # Mimetype guessing on name is not more accurate but more easily extensible
-    if mimetype is None and buffer is not None:
+    elif file is not None:
+        mimetype = magic.from_file(file, mime=True)
+    elif buffer is not None:
         mimetype = magic.from_buffer(buffer, mime=True)
+    else:
+        raise ValueError("One of name, file or buffer is required.")
     return mimetype
 
 
-class BaseObjectMetadata(models.Model):
-    id = models.CharField(_("id"), primary_key=True, unique=True, db_index=True, editable=False, max_length=40)
+class BaseObject(models.Model):
+    id = models.CharField(
+        primary_key=True, editable=False,
+        max_length=40  # I prefer the hexadecimal version
+    )
 
     class Meta:
         abstract = True
 
 
-class TreeMetadata(BaseObjectMetadata):
+class BaseBlob(BaseObject):
+    size = models.IntegerField()
+    # data = models.FileField()  # No need to save useless data
+    file = models.FileField()  # We'll save the blob contents instead
 
     class Meta:
-        managed = False
-
-    def __str__(self):
-        return "{0.id}".format(self)
+        abstract = True
 
 
-class BaseBlobMetadata(BaseObjectMetadata):
-    # Cached properties to avoid loading the blob
-    size = models.PositiveIntegerField(verbose_name=_(u"Size"))
-
+class Blob(BaseBlob):
     # Extra properties that must be optional (they are filled after the initial creation)
     mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
 
-    def fill(self, repository, name, blob, **kwargs):
-        """Method called after creation of the object to fill extra properties: mimetype, ...
+    def fill(self, name, **kwargs):
+        """Method called by "sync_backend" after creation of the object.
 
         Override to fill your own extra fields and call this parent.
         """
         if self.mimetype is None:
-            self.mimetype = guess_mimetype(name=name, buffer=blob.data)
+            self.mimetype = guess_mimetype(name=name, file=self.file.file)
 
     class Meta:
-        verbose_name = _("blob metadata")
-        verbose_name_plural = _("blob metadata")
-        abstract = True
+        verbose_name = _("Blob")
+        verbose_name_plural = _("Blobs")
+        swappable = 'GIT_STORAGE_BLOB_MODEL'
 
     def __str__(self):
         return "{0.id} type={0.mimetype}".format(self)
 
 
-class BlobMetadata(BaseBlobMetadata):
+class Tree(BaseObject):
 
     class Meta:
-        swappable = 'GIT_STORAGE_BLOB_METADATA_MODEL'
+        managed = False  # Built in-memory on the fly
+
+    def __str__(self):
+        return "{0.id}".format(self)
 
 
 class TreePermissionQuerySet(models.QuerySet):

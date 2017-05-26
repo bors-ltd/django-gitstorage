@@ -26,7 +26,7 @@ NEW_OBJECT=$3
 case "$REFNAME" in
     refs/heads/*)
         info "update reference $REFNAME from $OLD_OBJECT to $NEW_OBJECT"
-        $VIRTUAL_ENV/bin/django-admin sync_blobmetadata $REFNAME $OLD_OBJECT $NEW_OBJECT
+        $VIRTUAL_ENV/bin/django-admin sync_blobs $REFNAME $OLD_OBJECT $NEW_OBJECT
         ;;
     *)
         # Not our business

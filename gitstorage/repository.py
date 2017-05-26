@@ -15,36 +15,24 @@
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Wrappers with enhanced methods around pygit2 objects.
+Repository automatically opening the path configured in settings, with enhanced methods.
 """
 
 import pygit2
 
-
-class BlobWrapper(object):
-    """A lazy blob object that only loads data on demand."""
-    _blob = None
-
-    def __init__(self, repository, id):
-        self._repository = repository
-        self.id = id
-        self.hex = str(id)
-        self.type = pygit2.GIT_OBJ_BLOB
-
-    def _load_blob(self):
-        if self._blob is None:
-            self._blob = self._repository[self.id]
-        return self._blob
-
-    def __getattr__(self, item):
-        blob = self._load_blob()
-        return getattr(blob, item)
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 
 class Repository(pygit2.Repository):
 
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs):
+        try:
+            path = settings.GIT_STORAGE_REPOSITORY
+        except AttributeError:
+            raise ImproperlyConfigured("GIT_STORAGE_REPOSITORY is required")
+        super().__init__(path, *args, **kwargs)
+        # Not strictly required but sane, gitstorage is not designed for checkouts
         assert self.is_bare
         # Always load the index
         self.index.read_tree(self.tree.id)
@@ -70,8 +58,21 @@ class Repository(pygit2.Repository):
             return self.tree
 
         tree_entry = self.tree[path]
-
-        if tree_entry.type == 'blob':
-            return BlobWrapper(self, tree_entry.id)
-
         return self[tree_entry.id]
+
+    def listdir(self, path):
+        """List the contents of the given path.
+
+            @param: path: tree path, relative to the repository root
+            @return: ([], []) trees and blobs
+
+        Contrary to a filesystem listdir, we expose tree entries, and keep the notion of blobs and trees.
+        """
+        tree = self.open(path)
+        trees, blobs = [], []
+        for entry in tree:
+            if entry.type == "blob":
+                blobs.append(entry)
+            elif entry.type == "tree":
+                trees.append(entry)
+        return trees, blobs
