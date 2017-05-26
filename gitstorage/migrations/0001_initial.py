@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
+import gitstorage.models
 import gitstorage.validators
 
 
@@ -31,7 +32,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.CharField(editable=False, max_length=40, primary_key=True, serialize=False)),
                 ('size', models.IntegerField()),
-                ('data', models.FileField(upload_to='')),
+                ('data', models.FileField(upload_to=gitstorage.models.blob_upload_to)),
                 ('mimetype', models.CharField(blank=True, max_length=255, null=True, verbose_name='mimetype')),
             ],
             options={
