@@ -13,6 +13,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
+import os.path
 
 import magic
 
@@ -67,34 +68,39 @@ class BaseObject(models.Model):
         abstract = True
 
 
+def blob_upload_to(instance, filename):
+    """Do as Git, partition blob data by the first two bytes of the id."""
+    return os.path.join("gitstorage", instance.id[:2], filename)
+
+
 class BaseBlob(BaseObject):
     size = models.IntegerField()
-    # data = models.FileField()  # No need to save useless data
-    file = models.FileField()  # We'll save the blob contents instead
+    data = models.FileField(upload_to=blob_upload_to)
+
+    # Extra properties that must be optional (they are filled after the initial creation)
+    mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return "{0.id} type={0.mimetype}".format(self)
+
+    def fill(self, name):
+        """Method called by "sync_backend" after creation of the object.
+
+        Override to fill your own extra fields and call this parent.
+        """
+        if self.mimetype is None:
+            self.mimetype = guess_mimetype(name=name, file=self.data.file)
 
     class Meta:
         abstract = True
 
 
 class Blob(BaseBlob):
-    # Extra properties that must be optional (they are filled after the initial creation)
-    mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
-
-    def fill(self, name, **kwargs):
-        """Method called by "sync_backend" after creation of the object.
-
-        Override to fill your own extra fields and call this parent.
-        """
-        if self.mimetype is None:
-            self.mimetype = guess_mimetype(name=name, file=self.file.file)
 
     class Meta:
         verbose_name = _("Blob")
         verbose_name_plural = _("Blobs")
         swappable = 'GIT_STORAGE_BLOB_MODEL'
-
-    def __str__(self):
-        return "{0.id} type={0.mimetype}".format(self)
 
 
 class Tree(BaseObject):

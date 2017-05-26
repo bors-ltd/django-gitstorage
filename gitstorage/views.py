@@ -156,7 +156,7 @@ class BlobViewMixin(ObjectViewMixin):
 class PreviewViewMixin(BlobViewMixin):
 
     def get_content(self):
-        return self.object.file
+        return self.object.data
 
     def get_filename(self):
         # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"

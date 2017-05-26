@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.CharField(editable=False, max_length=40, primary_key=True, serialize=False)),
                 ('size', models.IntegerField()),
-                ('file', models.FileField(upload_to='')),
+                ('data', models.FileField(upload_to='')),
                 ('mimetype', models.CharField(blank=True, max_length=255, null=True, verbose_name='mimetype')),
             ],
             options={

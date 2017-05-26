@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 if entry.hex in self.known_blobs:
                     continue
                 git_obj = self.repo[entry.id]
-                blob = Blob(id=entry.hex, size=git_obj.size, file=SimpleUploadedFile(entry.name, git_obj.data))
+                blob = Blob(id=entry.hex, size=git_obj.size, data=SimpleUploadedFile(entry.name, git_obj.data))
                 blob.save()
                 # Now we have saved, the instance have an ID for relations
                 blob.fill(entry.name)
