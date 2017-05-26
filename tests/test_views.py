@@ -28,7 +28,7 @@ from gitstorage import storage
 from gitstorage.utils import Path
 from gitstorage.tests.utils import VanillaRepositoryMixin
 
-from . import views
+from tests.project import views
 
 
 class BaseViewTestCase(VanillaRepositoryMixin, TestCase):

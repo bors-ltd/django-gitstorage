@@ -1,7 +1,7 @@
 include COPYING README.rst requirements.txt
 
-recursive-include gitstorage *.py
-recursive-include gitstorage *.po *.mo
-recursive-exclude gitstorage/tests *.py
+graft gitstorage
+prune tests
 
-recursive-exclude gitstorage_dev *.py
+global-exclude *.py[cod] __pycache__
+global-exclude .*.swp *.*~

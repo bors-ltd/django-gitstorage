@@ -34,8 +34,6 @@ def get_blob_metadata_model():
     """
     try:
         return django_apps.get_model(settings.GIT_STORAGE_BLOB_METADATA_MODEL)
-    except ValueError:
-        raise ImproperlyConfigured("GIT_STORAGE_BLOB_METADATA_MODEL must be of the form 'app_label.model_name'")
     except LookupError:
         raise ImproperlyConfigured(
             "GIT_STORAGE_BLOB_METADATA_MODEL refers to model '%s' that has not been installed" % (
@@ -52,7 +50,7 @@ def guess_mimetype(name=None, buffer=None):
         mimetype = mimetypes.guess_type(name)[0]
     # Mimetype guessing on name is not more accurate but more easily extensible
     if mimetype is None and buffer is not None:
-        mimetype = magic.from_buffer(buffer, mime=True).decode()
+        mimetype = magic.from_buffer(buffer, mime=True)
     return mimetype
 
 

@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from .tests import views
+from . import views
 
 urlpatterns = [
     # Blob views

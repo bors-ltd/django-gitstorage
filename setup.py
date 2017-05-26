@@ -1,9 +1,6 @@
 import ast
-import codecs
 import os
-from subprocess import check_call
 
-from distutils.command.sdist import sdist
 from pip.download import PipSession
 from pip.req import parse_requirements
 from setuptools import find_packages, setup
@@ -24,11 +21,13 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Django Modules",
 ]
 
+
 # Don't touch below
 
 def get_requirements(source):
     install_reqs = parse_requirements(source, session=PipSession())
     return set([str(ir.req) for ir in install_reqs])
+
 
 class VersionFinder(ast.NodeVisitor):
     def __init__(self):
@@ -44,10 +43,12 @@ class VersionFinder(ast.NodeVisitor):
         ):
             self.data[node.targets[0].id[2:-2]] = node.value.s
 
+
 def read(*path_parts):
     filename = os.path.join(os.path.dirname(__file__), *path_parts)
     with open(filename) as fp:
         return fp.read()
+
 
 def find_info(*path_parts):
     finder = VersionFinder()

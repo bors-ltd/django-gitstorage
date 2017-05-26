@@ -26,7 +26,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'gitstorage.apps.GitStorageConfig',
-    'gitstorage_dev',
+    'tests.project',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -40,7 +40,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-ROOT_URLCONF = 'gitstorage_dev.urls'
+ROOT_URLCONF = 'tests.project.urls'
 
 TEMPLATES = [
     {
@@ -58,7 +58,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'gitstorage_dev.wsgi.application'
+WSGI_APPLICATION = 'tests.project.wsgi.application'
 
 
 # Database

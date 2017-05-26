@@ -13,8 +13,9 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
-
+from django.core.exceptions import ImproperlyConfigured
 from django.test.testcases import TestCase
+from django.test.utils import override_settings
 
 from gitstorage import factories
 from gitstorage import models
@@ -41,6 +42,10 @@ class BlobMetadataTestCase(TestCase):
     def setUp(self):
         self.metadata = factories.BlobMetadataFactory(id="c0d11342c4241087e3c126f7666d618586e39068",
                                                       mimetype="image/jpeg")
+
+    def test_swapped_model(self):
+        with override_settings(GIT_STORAGE_BLOB_METADATA_MODEL="project.DummyMetadata"):
+            self.assertRaises(ImproperlyConfigured, models.get_blob_metadata_model)
 
     def test_str(self):
         self.assertEqual(str(self.metadata), "c0d11342c4241087e3c126f7666d618586e39068 type=image/jpeg")
@@ -85,6 +90,19 @@ class TreePermissionManagerTestCase(TestCase):
 
         allowed_names = models.TreePermission.objects.allowed_names(self.other_user, "my/path")
         self.assertEqual(list(allowed_names), [])
+
+    def test_allowed_paths(self):
+        allowed_paths = models.TreePermission.objects.allowed_paths(self.anonymous)
+        self.assertEqual(allowed_paths, [])
+
+        allowed_paths = models.TreePermission.objects.allowed_paths(self.superuser)
+        self.assertIsNone(allowed_paths)
+
+        allowed_paths = models.TreePermission.objects.allowed_paths(self.user)
+        self.assertEqual(allowed_paths, ['my/path/my_name'])
+
+        allowed_paths = models.TreePermission.objects.allowed_paths(self.other_user)
+        self.assertEqual(allowed_paths, [])
 
     def test_is_allowed(self):
         path = utils.Path("my/path/my_name")

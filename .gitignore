@@ -1,10 +1,10 @@
-/.coverage
-/.idea/
-/README.html
 /build/
+/.coverage
 /dist/
 /django_gitstorage.egg-info/
-/gitstorage_dev/tests/checkout/
 /htmlcov/
+/.idea/
+/README.html
+/tests/checkout/
 *.mo
 *.pyc
