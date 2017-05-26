@@ -81,19 +81,19 @@ BlobViewMixin
 
 Default view for a blob object, displays its information, if allowed by access controls.
 
-PreviewViewMixin
-""""""""""""""""
-
-Preview the current blob data in the browser if possible, download it otherwise.
-
-Previewing an image could mean returning a smaller (in size and weight) image.
-
 DownloadViewMixin
 """""""""""""""""
 
 Force download the current blob's data.
 
-For our image example, it would mean downloading the original image, not the smaller preview.
+Even content native to the browser, image or PDF, would be downloaded.
+
+InlineViewMixin
+"""""""""""""""
+
+View the current blob's data in the browser if possible, download it otherwise.
+
+It does not mean images are previewed at a smaller resolution.
 
 SharesViewMixin
 """""""""""""""

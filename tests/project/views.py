@@ -28,7 +28,7 @@ class TestFormViewMixin(object):
         return HttpResponse(str(form.errors))
 
 
-class TestPreviewView(views.PreviewViewMixin, generic.TemplateView):
+class TestInlineView(views.InlineViewMixin, generic.TemplateView):
     template_name = "base.html"
 
 

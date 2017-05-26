@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     # Blob views
-    url(r'^(?P<path>.+)/;preview$', views.TestPreviewView.as_view(), name='blob_preview'),
+    url(r'^(?P<path>.+)/;inline', views.TestInlineView.as_view(), name='blob_inline'),
     url(r'^(?P<path>.+)/;download$', views.TestDownloadView.as_view(), name='blob_download'),
     # Tree views (including the root)
     url(r'^(?P<path>.*)/?;shares$', views.TestSharesView.as_view(), name='tree_shares'),

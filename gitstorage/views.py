@@ -19,10 +19,12 @@ import logging
 import operator
 import unicodedata
 
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http.response import Http404, StreamingHttpResponse
+from django.http.response import Http404
 from django.utils.decorators import classonlymethod
 from django.views import generic as generic_views
+from django.views import static
 
 import pygit2
 
@@ -153,32 +155,23 @@ class BlobViewMixin(ObjectViewMixin):
             raise PermissionDenied()
 
 
-class PreviewViewMixin(BlobViewMixin):
-
-    def get_content(self):
-        return self.object.data
+class DownloadViewMixin(BlobViewMixin):
+    """Download blob data from the storage once permissions are cleared."""
+    content_disposition = 'attachment'
 
     def get_filename(self):
-        # "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
+        """ "de\u0301po\u0302t.jpg" -> "dépôt.jpg" """
         return unicodedata.normalize('NFKC', self.path.name)
 
-    def get_content_type(self):
-        return self.object.mimetype
-
-    def get_content_disposition(self):
-        return "inline; filename=%s" % (self.get_filename(),)
-
     def get(self, request, *args, **kwargs):
-        content = self.get_content()
-        response = StreamingHttpResponse(content, content_type=self.get_content_type())
-        response['Content-Disposition'] = self.get_content_disposition()
+        response = static.serve(request, self.object.data.name, document_root=settings.MEDIA_ROOT)
+        response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)
         return response
 
 
-class DownloadViewMixin(PreviewViewMixin):
-
-    def get_content_disposition(self):
-        return "attachment; filename=%s" % (self.get_filename(),)
+class InlineViewMixin(DownloadViewMixin):
+    """Same as download but try and display the file within the browser."""
+    content_disposition = 'inline'
 
 
 class TreeViewMixin(ObjectViewMixin):

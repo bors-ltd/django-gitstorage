@@ -61,7 +61,7 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
             self.blob = factories.BlobFactory(
                 id=self.git_obj.hex,
                 size=self.git_obj.size,
-                file=SimpleUploadedFile(self.path.name, self.git_obj.data),
+                data=SimpleUploadedFile(self.path.name, self.git_obj.data),
                 mimetype="text/plain",
             )
 
@@ -72,11 +72,11 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
             factories.TreePermissionFactory(parent_path=self.path.parent_path, name=self.path.name, user=self.user)
 
 
-class PreviewViewTestCase(BaseViewTestCase):
+class InlineViewTestCase(BaseViewTestCase):
     path = "path/with/unicode/de\u0301po\u0302t.txt"
 
     def test_get(self):
-        response = self.client.get(reverse('blob_preview', args=[self.path]))
+        response = self.client.get(reverse('blob_inline', args=[self.path]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Disposition'], "inline; filename=dépôt.txt")
         self.assertContains(response, "de\u0301po\u0302t")
