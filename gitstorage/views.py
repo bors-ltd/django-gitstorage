@@ -183,7 +183,11 @@ class DownloadViewMixin(BlobViewMixin):
             response = static.serve(request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT)
         else:
             # In production, let the webserver handle the transfer, so Django can handle another request
-            response = HttpResponse(content_type=mimetypes.guess_type(field.name))
+            content_type, encoding = mimetypes.guess_type(field.name)
+            content_type = content_type or 'application/octet-stream'
+            response = HttpResponse(content_type=content_type)
+            if encoding:
+                response["Content-Encoding"] = encoding
             response['X-Accel-Redirect'] = field.url
 
         response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)

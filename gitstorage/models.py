@@ -75,7 +75,9 @@ class BaseBlob(BaseObject):
 
     @property
     def mimetype(self):
-        return mimetypes.guess_type(self.data.name)
+        mimetype, encoding = mimetypes.guess_type(self.data.name)
+        mimetype = mimetype or 'application/octet-stream'
+        return mimetype
 
     class Meta:
         abstract = True
