@@ -1,0 +1,18 @@
+from django.conf import settings
+from django.utils.functional import LazyObject
+from django.utils.module_loading import import_string
+
+
+def get_storage_class(import_path=None):
+    return import_string(import_path or settings.GITSTORAGE_DATA_STORAGE)
+
+
+class DefaultStorage(LazyObject):
+    def _setup(self):
+        self._wrapped = get_storage_class()(
+            location=settings.GITSTORAGE_DATA_ROOT,
+            base_url=None,  # Must raise, they are not public
+        )
+
+
+default_storage = DefaultStorage()

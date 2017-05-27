@@ -26,10 +26,10 @@ class NewRepositoryMixin(object):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp("gitstorage")
         location = os.path.join(self.tempdir, "scratch")
-        settings.GIT_STORAGE_REPOSITORY = location
+        settings.GITSTORAGE_REPOSITORY = location
 
     def tearDown(self):
-        delattr(settings, 'GIT_STORAGE_REPOSITORY')
+        delattr(settings, 'GITSTORAGE_REPOSITORY')
         shutil.rmtree(self.tempdir, ignore_errors=True)
 
 
@@ -39,8 +39,8 @@ class VanillaRepositoryMixin(object):
         self.tempdir = tempfile.mkdtemp("gitstorage")
         location = os.path.join(self.tempdir, "vanilla")
         shutil.copytree(os.path.join(os.path.dirname(__file__), "vanilla"), location)
-        settings.GIT_STORAGE_REPOSITORY = location
+        settings.GITSTORAGE_REPOSITORY = location
 
     def tearDown(self):
-        delattr(settings, 'GIT_STORAGE_REPOSITORY')
+        delattr(settings, 'GITSTORAGE_REPOSITORY')
         shutil.rmtree(self.tempdir, ignore_errors=True)

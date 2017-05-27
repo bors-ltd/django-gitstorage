@@ -28,9 +28,9 @@ class Repository(pygit2.Repository):
 
     def __init__(self, *args, **kwargs):
         try:
-            path = settings.GIT_STORAGE_REPOSITORY
+            path = settings.GITSTORAGE_REPOSITORY
         except AttributeError:
-            raise ImproperlyConfigured("GIT_STORAGE_REPOSITORY is required")
+            raise ImproperlyConfigured("GITSTORAGE_REPOSITORY is required")
         super().__init__(path, *args, **kwargs)
         # Not strictly required but sane, gitstorage is not designed for checkouts
         assert self.is_bare

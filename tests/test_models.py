@@ -48,7 +48,7 @@ class BlobTestCase(TestCase):
         )
 
     def test_swapped_model(self):
-        with override_settings(GIT_STORAGE_BLOB_MODEL="project.DummyBlob"):
+        with override_settings(GITSTORAGE_BLOB_MODEL="project.DummyBlob"):
             self.assertRaises(ImproperlyConfigured, models.get_blob_model)
 
     def test_str(self):

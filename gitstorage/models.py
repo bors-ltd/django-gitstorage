@@ -25,6 +25,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from . import mimetypes
+from . import storage
 from . import utils
 from . import validators
 
@@ -34,11 +35,11 @@ def get_blob_model():
     Returns the Blob model that is active in this project.
     """
     try:
-        return django_apps.get_model(settings.GIT_STORAGE_BLOB_MODEL)
+        return django_apps.get_model(settings.GITSTORAGE_BLOB_MODEL)
     except LookupError:
         raise ImproperlyConfigured(
-            "GIT_STORAGE_BLOB_MODEL refers to model '%s' that has not been installed" % (
-                settings.GIT_STORAGE_BLOB_MODEL,
+            "GITSTORAGE_BLOB_MODEL refers to model '%s' that has not been installed" % (
+                settings.GITSTORAGE_BLOB_MODEL,
             )
         )
     except AttributeError:
@@ -69,13 +70,13 @@ class BaseObject(models.Model):
 
 
 def blob_upload_to(instance, filename):
-    """Do as Git, partition blob data by the first two bytes of the id."""
-    return os.path.join("gitstorage", instance.id[:2], filename)
+    """Do as Git, partition blob data by the first two characters of the id."""
+    return os.path.join(instance.id[:2], filename)
 
 
 class BaseBlob(BaseObject):
     size = models.IntegerField()
-    data = models.FileField(upload_to=blob_upload_to)
+    data = models.FileField(upload_to=blob_upload_to, storage=storage.default_storage)
 
     # Extra properties that must be optional (they are filled after the initial creation)
     mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
@@ -100,7 +101,7 @@ class Blob(BaseBlob):
     class Meta:
         verbose_name = _("Blob")
         verbose_name_plural = _("Blobs")
-        swappable = 'GIT_STORAGE_BLOB_MODEL'
+        swappable = 'GITSTORAGE_BLOB_MODEL'
 
 
 class Tree(BaseObject):

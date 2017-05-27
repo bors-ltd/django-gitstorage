@@ -164,7 +164,7 @@ class DownloadViewMixin(BlobViewMixin):
         return unicodedata.normalize('NFKC', self.path.name)
 
     def get(self, request, *args, **kwargs):
-        response = static.serve(request, self.object.data.name, document_root=settings.MEDIA_ROOT)
+        response = static.serve(request, self.object.data.name, document_root=settings.GITSTORAGE_DATA_ROOT)
         response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)
         return response
 

@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Blob',
                 'verbose_name_plural': 'Blobs',
-                'swappable': 'GIT_STORAGE_BLOB_MODEL',
+                'swappable': 'GITSTORAGE_BLOB_MODEL',
             },
         ),
         migrations.CreateModel(
