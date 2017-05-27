@@ -18,7 +18,6 @@ import os.path
 import magic
 
 from django.apps import apps as django_apps
-from django.conf import settings
 from django.contrib.auth import models as auth_models
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
@@ -28,6 +27,7 @@ from . import mimetypes
 from . import storage
 from . import utils
 from . import validators
+from .conf import settings
 
 
 def get_blob_model():
