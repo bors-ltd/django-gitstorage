@@ -11,7 +11,7 @@ class DefaultStorage(LazyObject):
     def _setup(self):
         self._wrapped = get_storage_class()(
             location=settings.GITSTORAGE_DATA_ROOT,
-            base_url=None,  # Must raise, they are not public
+            base_url=settings.GITSTORAGE_DATA_URL,  # Served by webserver for X-Accel-Redirect
         )
 
 

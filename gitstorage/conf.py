@@ -10,3 +10,5 @@ class AppConf(appconf.AppConf):
     # it would hardly support any other storage method
     GITSTORAGE_DATA_STORAGE = 'django.core.files.storage.FileSystemStorage'
     GITSTORAGE_DATA_ROOT = 'gitstorage'
+    # For X-Accel-Redirect, as data must not be directly exposed
+    GITSTORAGE_DATA_URL = '/data/'

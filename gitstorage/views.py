@@ -18,6 +18,7 @@ from functools import update_wrapper
 import logging
 import operator
 import unicodedata
+import urllib.parse
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
@@ -160,16 +161,27 @@ class DownloadViewMixin(BlobViewMixin):
     content_disposition = 'attachment'
 
     def get_filename(self):
-        """ "de\u0301po\u0302t.jpg" -> "dépôt.jpg" """
+        """The name under which the blob is currently know, which may not be the name of the data file,
+        (renames, storage suffixing to avoid name clash...).
+
+        Also clean up filesystem idiosyncrasies: "de\u0301po\u0302t.jpg" -> "dépôt.jpg".
+        """
         return unicodedata.normalize('NFKC', self.path.name)
 
-    def get_path(self):
-        """The path to serve, just the path stored in the file field."""
-        return self.object.data.name
+    def get_field(self):
+        """The FileField to serve, blob.data by default.
+
+        This may be an alternative field for thumbnail preview, file format conversion...
+        """
+        return self.object.data
 
     def get(self, request, *args, **kwargs):
-        response = static.serve(request, self.get_path(), document_root=settings.GITSTORAGE_DATA_ROOT)
+        field = self.get_field()
+        # The serve view handles 304 Not Modified which is already a big optimization
+        response = static.serve(request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT)
         response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)
+        # Extra optimization to let the webserver handle the transfer, so Django can handle another request
+        response['X-Accel-Redirect'] = field.url
         return response
 
 
