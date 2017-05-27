@@ -18,11 +18,10 @@ from functools import update_wrapper
 import logging
 import operator
 import unicodedata
-import urllib.parse
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http.response import Http404
+from django.http.response import Http404, HttpResponse
 from django.utils.decorators import classonlymethod
 from django.views import generic as generic_views
 from django.views import static
@@ -177,11 +176,16 @@ class DownloadViewMixin(BlobViewMixin):
 
     def get(self, request, *args, **kwargs):
         field = self.get_field()
-        # The serve view handles 304 Not Modified which is already a big optimization
-        response = static.serve(request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT)
+        if settings.DEBUG:
+            # Serve ourselves in debug/development mode
+            # The serve view handles 304 Not Modified, which is already a big optimization
+            response = static.serve(request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT)
+        else:
+            # In production, let the webserver handle the transfer, so Django can handle another request
+            response = HttpResponse()
+            response['X-Accel-Redirect'] = field.url
+
         response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)
-        # Extra optimization to let the webserver handle the transfer, so Django can handle another request
-        response['X-Accel-Redirect'] = field.url
         return response
 
 
