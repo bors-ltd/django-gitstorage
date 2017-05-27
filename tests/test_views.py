@@ -62,7 +62,6 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
                 id=self.git_obj.hex,
                 size=self.git_obj.size,
                 data=SimpleUploadedFile(self.path.name, self.git_obj.data),
-                mimetype="text/plain",
             )
 
         elif git_obj.type == pygit2.GIT_OBJ_TREE:
@@ -72,16 +71,6 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
             factories.TreePermissionFactory(parent_path=self.path.parent_path, name=self.path.name, user=self.user)
 
 
-class InlineViewTestCase(BaseViewTestCase):
-    path = "path/with/unicode/de\u0301po\u0302t.txt"
-
-    def test_get(self):
-        response = self.client.get(reverse('blob_inline', args=[self.path]))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Disposition'], "inline; filename=dépôt.txt")
-        self.assertContains(response, "de\u0301po\u0302t")
-
-
 class DownloadViewTestCase(BaseViewTestCase):
     path = "path/with/unicode/de\u0301po\u0302t.txt"
 
@@ -89,7 +78,15 @@ class DownloadViewTestCase(BaseViewTestCase):
         response = self.client.get(reverse('blob_download', args=[self.path]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Disposition'], "attachment; filename=dépôt.txt")
-        self.assertContains(response, "de\u0301po\u0302t")
+
+
+class InlineViewTestCase(BaseViewTestCase):
+    path = "path/with/unicode/de\u0301po\u0302t.txt"
+
+    def test_get(self):
+        response = self.client.get(reverse('blob_inline', args=[self.path]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Disposition'], "inline; filename=dépôt.txt")
 
 
 class SharesViewTestCase(BaseViewTestCase):

@@ -45,9 +45,9 @@ Models
 Blob
 """"
 
-Git object of type blob with extra fields, only mimetype for now. Note that we don't store the raw data
-but the file contents already extracted. So this file can be served by a front-end web server using X-Accel-Redirect
-and its actual path on the filesystem.
+Git object of type blob with extra fields possible. We store the data in a filesystem storage,
+so this file can be opened by any regular tool for extra transformation: metadata extraction, thumbnails...
+The storage also provides an internal URL for the front-end web server to serve it (X-Accel-Redirect).
 
 We ignore all other object types.
 

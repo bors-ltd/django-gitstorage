@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.CharField(editable=False, max_length=40, primary_key=True, serialize=False)),
                 ('size', models.IntegerField()),
-                ('data', models.FileField(upload_to=gitstorage.models.blob_upload_to)),
+                ('data', models.FileField(storage=django.core.files.storage.FileSystemStorage(base_url='/data/', location='gitstorage'), upload_to=gitstorage.models.blob_upload_to)),
                 ('mimetype', models.CharField(blank=True, max_length=255, null=True, verbose_name='mimetype')),
             ],
             options={

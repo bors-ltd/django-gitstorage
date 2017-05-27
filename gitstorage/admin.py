@@ -20,8 +20,7 @@ from . import models
 
 
 class BlobAdmin(admin.ModelAdmin):
-    search_fields = ['id', 'mimetype']
-    list_filter = ['mimetype']
+    search_fields = ['id']
 
 admin.site.register(models.Blob, BlobAdmin)
 

@@ -15,8 +15,6 @@
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 import os.path
 
-import magic
-
 from django.apps import apps as django_apps
 from django.contrib.auth import models as auth_models
 from django.core.exceptions import ImproperlyConfigured
@@ -46,19 +44,6 @@ def get_blob_model():
         return Blob
 
 
-def guess_mimetype(name=None, file=None, buffer=None):
-    # Mimetype guessing on name is not more accurate but more easily extensible
-    if name is not None:
-        mimetype = mimetypes.guess_type(name)[0]
-    elif file is not None:
-        mimetype = magic.from_file(file, mime=True)
-    elif buffer is not None:
-        mimetype = magic.from_buffer(buffer, mime=True)
-    else:
-        raise ValueError("One of name, file or buffer is required.")
-    return mimetype
-
-
 class BaseObject(models.Model):
     id = models.CharField(
         primary_key=True, editable=False,
@@ -78,19 +63,19 @@ class BaseBlob(BaseObject):
     size = models.IntegerField()
     data = models.FileField(upload_to=blob_upload_to, storage=storage.default_storage)
 
-    # Extra properties that must be optional (they are filled after the initial creation)
-    mimetype = models.CharField(_("mimetype"), max_length=255, null=True, blank=True)
-
     def __str__(self):
-        return "{0.id} type={0.mimetype}".format(self)
+        return self.id
 
     def fill(self, name):
         """Method called by "sync_backend" after creation of the object.
 
         Override to fill your own extra fields and call this parent.
         """
-        if self.mimetype is None:
-            self.mimetype = guess_mimetype(name=name, file=self.data.file)
+        pass
+
+    @property
+    def mimetype(self):
+        return mimetypes.guess_type(self.data.name)
 
     class Meta:
         abstract = True

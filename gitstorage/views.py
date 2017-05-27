@@ -29,6 +29,7 @@ from django.views import static
 import pygit2
 
 from . import forms
+from . import mimetypes
 from . import models
 from . import repository
 from .utils import Path
@@ -182,7 +183,7 @@ class DownloadViewMixin(BlobViewMixin):
             response = static.serve(request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT)
         else:
             # In production, let the webserver handle the transfer, so Django can handle another request
-            response = HttpResponse()
+            response = HttpResponse(content_type=mimetypes.guess_type(field.name))
             response['X-Accel-Redirect'] = field.url
 
         response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)

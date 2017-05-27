@@ -32,7 +32,7 @@ class SyncBlobMedataTestCase(VanillaRepositoryMixin, TestCase):
         self.assertQuerysetEqual(models.Blob.objects.all(), [])
         call_command("sync_blobs", "refs/heads/master", "0" * 40, str(repo.head.target), verbosity=0)
         blob = models.Blob.objects.get(id="257cc5642cb1a054f08cc83f2d943e56fd3ebe99")
-        self.assertEqual(blob.mimetype, "text/plain")
+        self.assertEqual(blob.size, 4)
 
     def test_idempotent(self):
         """Safely ignore blobs already treated."""

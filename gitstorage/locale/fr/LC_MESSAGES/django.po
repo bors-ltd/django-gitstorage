@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-26 16:01+0200\n"
+"POT-Creation-Date: 2017-05-27 14:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,30 +25,26 @@ msgstr "Utilisateurs"
 msgid "File"
 msgstr "Fichier"
 
-#: models.py:78
-msgid "mimetype"
-msgstr "type mime"
-
-#: models.py:89
+#: models.py:82
 msgid "Blob"
 msgstr ""
 
-#: models.py:90
+#: models.py:83
 msgid "Blobs"
 msgstr ""
 
-#: models.py:162
+#: models.py:152
 msgid "parent path"
 msgstr "parent"
 
-#: models.py:164
+#: models.py:154
 msgid "name"
 msgstr "nom"
 
-#: models.py:171
+#: models.py:161
 msgid "tree permission"
 msgstr "permission"
 
-#: models.py:172
+#: models.py:162
 msgid "tree permissions"
 msgstr "permissions"
