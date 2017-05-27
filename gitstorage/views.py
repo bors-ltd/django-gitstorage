@@ -163,8 +163,12 @@ class DownloadViewMixin(BlobViewMixin):
         """ "de\u0301po\u0302t.jpg" -> "dépôt.jpg" """
         return unicodedata.normalize('NFKC', self.path.name)
 
+    def get_path(self):
+        """The path to serve, just the path stored in the file field."""
+        return self.object.data.name
+
     def get(self, request, *args, **kwargs):
-        response = static.serve(request, self.object.data.name, document_root=settings.GITSTORAGE_DATA_ROOT)
+        response = static.serve(request, self.get_path(), document_root=settings.GITSTORAGE_DATA_ROOT)
         response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)
         return response
 
