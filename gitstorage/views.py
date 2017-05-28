@@ -281,6 +281,14 @@ class AdminPermissionMixin(object):
             raise PermissionDenied()
         # This is the only condition, permissions don't make sense once you're admin
 
+class AuthenticatedPermissionMixin(object):
+
+    def check_permissions(self):
+        if not self.request.user.is_authenticated():
+            raise PermissionDenied()
+        # Being authenticated is good but not enough
+        return super().check_permissions()
+
 
 class BaseRepositoryView(ObjectViewMixin, generic_views.View):
     """Map URL path to the Git object at the same path, then return the dedicated view.
