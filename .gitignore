@@ -1,10 +1,13 @@
 /build/
 /.coverage
+/data
 /dist/
 /django_gitstorage.egg-info/
 /htmlcov/
 /.idea/
-/README.html
-/tests/checkout/
 *.mo
 *.pyc
+/README.html
+/tests/checkout/
+/TODO
+/.vscode
