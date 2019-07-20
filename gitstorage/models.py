@@ -16,7 +16,6 @@
 import os.path
 
 from django.apps import apps as django_apps
-from django.contrib.auth import models as auth_models
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -36,9 +35,8 @@ def get_blob_model():
         return django_apps.get_model(settings.GITSTORAGE_BLOB_MODEL)
     except LookupError:
         raise ImproperlyConfigured(
-            "GITSTORAGE_BLOB_MODEL refers to model '%s' that has not been installed" % (
-                settings.GITSTORAGE_BLOB_MODEL,
-            )
+            "GITSTORAGE_BLOB_MODEL refers to model '%s' that has not been installed"
+            % (settings.GITSTORAGE_BLOB_MODEL,)
         )
     except AttributeError:
         return Blob
@@ -46,8 +44,9 @@ def get_blob_model():
 
 class BaseObject(models.Model):
     id = models.CharField(
-        primary_key=True, editable=False,
-        max_length=40  # I prefer the hexadecimal version
+        primary_key=True,
+        editable=False,
+        max_length=40,  # I prefer the hexadecimal version
     )
 
     class Meta:
@@ -76,7 +75,7 @@ class BaseBlob(BaseObject):
     @property
     def mimetype(self):
         mimetype, encoding = mimetypes.guess_type(self.data.name)
-        mimetype = mimetype or 'application/octet-stream'
+        mimetype = mimetype or "application/octet-stream"
         return mimetype
 
     class Meta:
@@ -84,15 +83,13 @@ class BaseBlob(BaseObject):
 
 
 class Blob(BaseBlob):
-
     class Meta:
         verbose_name = _("Blob")
         verbose_name_plural = _("Blobs")
-        swappable = 'GITSTORAGE_BLOB_MODEL'
+        swappable = "GITSTORAGE_BLOB_MODEL"
 
 
 class Tree(BaseObject):
-
     class Meta:
         managed = False  # Built in-memory on the fly
 
@@ -101,9 +98,10 @@ class Tree(BaseObject):
 
 
 class TreePermissionQuerySet(models.QuerySet):
-
     def current_permissions(self, path, **kwargs):
-        return self.filter(parent_path=path.parent_path, name=path.name, **kwargs).select_related('user')
+        return self.filter(
+            parent_path=path.parent_path, name=path.name, **kwargs
+        ).select_related("user")
 
     def allowed_names(self, user, parent_path, **kwargs):
         if user:
@@ -112,7 +110,9 @@ class TreePermissionQuerySet(models.QuerySet):
                 return None
             if not user.is_authenticated():
                 user = None
-        return self.filter(parent_path=parent_path, user=user, **kwargs).values_list('name', flat=True)
+        return self.filter(parent_path=parent_path, user=user, **kwargs).values_list(
+            "name", flat=True
+        )
 
     def allowed_paths(self, user):
         if user:
@@ -121,20 +121,26 @@ class TreePermissionQuerySet(models.QuerySet):
                 return None
             if not user.is_authenticated():
                 user = None
-        all_permissions = self.filter(user=user).values_list('parent_path', 'name')
+        all_permissions = self.filter(user=user).values_list("parent_path", "name")
         return ["/".join(filter(None, segments)) for segments in all_permissions]
 
     def for_user(self, user, path, **kwargs):
         if user:
             if not user.is_authenticated():
                 user = None
-        return self.filter(user=user, parent_path=path.parent_path, name=path.name, **kwargs)
+        return self.filter(
+            user=user, parent_path=path.parent_path, name=path.name, **kwargs
+        )
 
     def other_permissions(self, user, path, **kwargs):
         if user:
             if not user.is_authenticated():
                 user = None
-        return self.filter(user=user, parent_path=path.parent_path, **kwargs).exclude(name=path.name).exists()
+        return (
+            self.filter(user=user, parent_path=path.parent_path, **kwargs)
+            .exclude(name=path.name)
+            .exists()
+        )
 
     def is_allowed(self, user, path, **kwargs):
         if user:
@@ -150,17 +156,36 @@ class TreePermissionQuerySet(models.QuerySet):
         # Does not work for [None]
         if None in users:
             for user in users:
-                self.filter(parent_path=path.parent_path, name=path.name, user=user).delete()
+                self.filter(
+                    parent_path=path.parent_path, name=path.name, user=user
+                ).delete()
         else:
-            self.filter(parent_path=path.parent_path, name=path.name, user__in=users).delete()
+            self.filter(
+                parent_path=path.parent_path, name=path.name, user__in=users
+            ).delete()
 
 
 class TreePermission(models.Model):
-    parent_path = models.CharField(_("parent path"), max_length=2048, db_index=True, blank=True,
-                                   validators=[validators.path_validator])
-    name = models.CharField(_("name"), max_length=256, db_index=True, blank=True,
-                            validators=[validators.name_validator])
-    user = models.ForeignKey(auth_models.User, null=True, blank=True)  # For anonymous user
+    parent_path = models.CharField(
+        _("parent path"),
+        max_length=2048,
+        db_index=True,
+        blank=True,
+        validators=[validators.path_validator],
+    )
+    name = models.CharField(
+        _("name"),
+        max_length=256,
+        db_index=True,
+        blank=True,
+        validators=[validators.name_validator],
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,  # For anonymous user
+        blank=True,
+        on_delete=models.CASCADE,
+    )
 
     objects = TreePermissionQuerySet.as_manager()
 
