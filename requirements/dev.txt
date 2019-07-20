@@ -1,7 +1,0 @@
--r ../requirements.txt
-coverage
-docutils
-factory_boy
-ipdb
-ipython
-pylint>=1.5
