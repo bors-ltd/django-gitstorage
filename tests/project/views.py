@@ -69,7 +69,9 @@ class DummyRepositoryView(views.BaseRepositoryView):
     pass
 
 
-class DummyAdminShareView(views.AdminPermissionMixin, views.ShareViewMixin, generic.View):
+class DummyAdminShareView(
+    views.AdminPermissionMixin, views.ShareViewMixin, generic.View
+):
     pass
 
 

@@ -19,14 +19,13 @@ from gitstorage.utils import Path
 
 
 class PathTestCase(TestCase):
-
     def test_path_str(self):
         path = Path("my/path")
         self.assertEqual(path.parent_path, "my")
         self.assertEqual(path.name, "path")
 
     def test_path_bytes(self):
-        path = Path(b'my/path')
+        path = Path(b"my/path")
         self.assertEqual(path.parent_path, "my")
         self.assertEqual(path.name, "path")
 

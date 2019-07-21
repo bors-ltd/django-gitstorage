@@ -30,9 +30,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         # These are the arguments the "update" hook will send
-        parser.add_argument('refname', help='reference name (usually "refs/heads/master")')
-        parser.add_argument('start_oid', help="start commit id (hash)")
-        parser.add_argument('end_oid', help="end commit id (hash)")
+        parser.add_argument(
+            "refname", help='reference name (usually "refs/heads/master")'
+        )
+        parser.add_argument("start_oid", help="start commit id (hash)")
+        parser.add_argument("end_oid", help="end commit id (hash)")
 
     def sync_tree(self, tree):
         """Recursively traverse a tree and create an object for every of its blobs."""
@@ -43,7 +45,11 @@ class Command(BaseCommand):
                 if entry.hex in self.known_blobs:
                     continue
                 git_obj = self.repo[entry.id]
-                blob = Blob(id=entry.hex, size=git_obj.size, data=SimpleUploadedFile(entry.name, git_obj.data))
+                blob = Blob(
+                    id=entry.hex,
+                    size=git_obj.size,
+                    data=SimpleUploadedFile(entry.name, git_obj.data),
+                )
                 blob.save()
                 # Now we have saved, the instance have an ID for relations
                 blob.fill(entry.name)
@@ -64,21 +70,31 @@ class Command(BaseCommand):
         self.repo = repository.Repository()
 
         # Safely ignore pushing to another branch
-        if self.repo.head.name != options['refname']:
-            if options['verbosity']:
-                self.stdout.write('Ignoring unexposed branch "{}", exiting.'.format(options['refname']))
+        if self.repo.head.name != options["refname"]:
+            if options["verbosity"]:
+                self.stdout.write(
+                    'Ignoring unexposed branch "{}", exiting.'.format(
+                        options["refname"]
+                    )
+                )
             return
 
-        self.known_blobs = set(models.get_blob_model().objects.values_list('id', flat=True))
+        self.known_blobs = set(
+            models.get_blob_model().objects.values_list("id", flat=True)
+        )
         counter_before = len(self.known_blobs)
 
-        start_oid = options['start_oid']
-        end_oid = options['end_oid']
-        if options['verbosity']:
-            self.stdout.write("Synchronising blobs from {} to {}...".format(start_oid, end_oid))
+        start_oid = options["start_oid"]
+        end_oid = options["end_oid"]
+        if options["verbosity"]:
+            self.stdout.write(
+                "Synchronising blobs from {} to {}...".format(start_oid, end_oid)
+            )
 
         self.walk(start_oid, end_oid)
 
-        if options['verbosity']:
+        if options["verbosity"]:
             counter_after = len(self.known_blobs)
-            self.stdout.write("Done, {} blobs created.".format(counter_after - counter_before))
+            self.stdout.write(
+                "Done, {} blobs created.".format(counter_after - counter_before)
+            )

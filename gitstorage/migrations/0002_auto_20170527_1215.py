@@ -7,13 +7,6 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('gitstorage', '0001_initial'),
-    ]
+    dependencies = [("gitstorage", "0001_initial")]
 
-    operations = [
-        migrations.RemoveField(
-            model_name='blob',
-            name='mimetype',
-        ),
-    ]
+    operations = [migrations.RemoveField(model_name="blob", name="mimetype")]

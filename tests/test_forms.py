@@ -20,7 +20,6 @@ from gitstorage import forms
 
 
 class UsersChoiceFieldTestCase(TestCase):
-
     def test_superuser(self):
         factories.SuperUserFactory()
         field = forms.UsersChoiceField()
@@ -29,32 +28,34 @@ class UsersChoiceFieldTestCase(TestCase):
     def test_user(self):
         factories.UserFactory(username="john_doe")
         field = forms.UsersChoiceField()
-        self.assertQuerysetEqual(field.queryset, ["john_doe"], transform=lambda obj: obj.username)
+        self.assertQuerysetEqual(
+            field.queryset, ["john_doe"], transform=lambda obj: obj.username
+        )
 
     def test_label_from_instance(self):
-        user = factories.UserFactory(first_name="John", last_name="Doe", email="john.doe@example.com")
+        user = factories.UserFactory(
+            first_name="John", last_name="Doe", email="john.doe@example.com"
+        )
         field = forms.UsersChoiceField()
         choice = field.choices.choice(user)
         self.assertEqual(choice, (user.pk, "John Doe <john.doe@example.com>"))
 
 
 class RemoveUsersFormTestCase(TestCase):
-
     def test_current_users(self):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
         current_user_ids = [user1.pk]
         form = forms.RemoveUsersForm(current_user_ids)
-        self.assertIn(user1, form.fields['users'].queryset)
-        self.assertNotIn(user2, form.fields['users'].queryset)
+        self.assertIn(user1, form.fields["users"].queryset)
+        self.assertNotIn(user2, form.fields["users"].queryset)
 
 
 class AddUsersFormTestCase(TestCase):
-
     def test_current_users(self):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
         current_user_ids = [user1.pk]
         form = forms.AddUsersForm(current_user_ids)
-        self.assertNotIn(user1, form.fields['users'].queryset)
-        self.assertIn(user2, form.fields['users'].queryset)
+        self.assertNotIn(user1, form.fields["users"].queryset)
+        self.assertIn(user2, form.fields["users"].queryset)

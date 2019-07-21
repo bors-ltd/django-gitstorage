@@ -17,7 +17,7 @@ import pygit2
 
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http.response import Http404
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -67,51 +67,59 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
             self.git_obj = git_obj
 
             # Permission to itself
-            factories.TreePermissionFactory(parent_path=self.path.parent_path, name=self.path.name, user=self.user)
+            factories.TreePermissionFactory(
+                parent_path=self.path.parent_path, name=self.path.name, user=self.user
+            )
 
 
 class DownloadViewTestCase(BaseViewTestCase):
     path = "path/with/unicode/de\u0301po\u0302t.txt"
 
     def test_get(self):
-        response = self.client.get(reverse('blob_download', args=[self.path]))
+        response = self.client.get(reverse("blob_download", args=[self.path]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Disposition'], "attachment; filename=dépôt.txt")
+        self.assertEqual(
+            response["Content-Disposition"], "attachment; filename=dépôt.txt"
+        )
 
 
 class InlineViewTestCase(BaseViewTestCase):
     path = "path/with/unicode/de\u0301po\u0302t.txt"
 
     def test_get(self):
-        response = self.client.get(reverse('blob_inline', args=[self.path]))
+        response = self.client.get(reverse("blob_inline", args=[self.path]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Content-Disposition'], "inline; filename=dépôt.txt")
+        self.assertEqual(response["Content-Disposition"], "inline; filename=dépôt.txt")
 
 
 class SharesViewTestCase(BaseViewTestCase):
     path = "foo/bar/baz"
 
     def test_get(self):
-        response = self.client.get(reverse('tree_shares', args=[self.path]))
+        response = self.client.get(reverse("tree_shares", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
     def test_post(self):
         user = factories.UserFactory()
-        factories.TreePermissionFactory(parent_path=self.path.parent_path, name=self.path.name, user=user)
+        factories.TreePermissionFactory(
+            parent_path=self.path.parent_path, name=self.path.name, user=user
+        )
 
-        response = self.client.post(reverse('tree_shares', args=[self.path]))
+        response = self.client.post(reverse("tree_shares", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
-        data = {'users': user.pk}
-        response = self.client.post(reverse('tree_shares', args=[self.path]), data=data)
+        data = {"users": user.pk}
+        response = self.client.post(reverse("tree_shares", args=[self.path]), data=data)
         self.assertEqual(response.status_code, 302)
 
         self.assertFalse(
-            models.TreePermission.objects.filter(parent_path="foo/bar", name="baz", user=user).exists()
+            models.TreePermission.objects.filter(
+                parent_path="foo/bar", name="baz", user=user
+            ).exists()
         )
 
         # Re-remove the same
-        response = self.client.post(reverse('tree_shares', args=[self.path]), data=data)
+        response = self.client.post(reverse("tree_shares", args=[self.path]), data=data)
         self.assertEqual(response.status_code, 200)
 
 
@@ -119,25 +127,33 @@ class ShareViewTestCase(BaseViewTestCase):
     path = "foo/bar/baz"
 
     def test_get(self):
-        response = self.client.get(reverse('tree_share', args=[self.path]))
+        response = self.client.get(reverse("tree_share", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
     def test_post(self):
         user = factories.UserFactory()
 
-        response = self.client.post(reverse('tree_share', args=[self.path]))
+        response = self.client.post(reverse("tree_share", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
-        self.assertFalse(models.TreePermission.objects.filter(parent_path="foo/bar", name="baz", user=user).exists())
+        self.assertFalse(
+            models.TreePermission.objects.filter(
+                parent_path="foo/bar", name="baz", user=user
+            ).exists()
+        )
 
-        data = {'users': user.pk}
-        response = self.client.post(reverse('tree_share', args=[self.path]), data=data)
+        data = {"users": user.pk}
+        response = self.client.post(reverse("tree_share", args=[self.path]), data=data)
         self.assertEqual(response.status_code, 302)
 
-        self.assertTrue(models.TreePermission.objects.filter(parent_path="foo/bar", name="baz", user=user).exists())
+        self.assertTrue(
+            models.TreePermission.objects.filter(
+                parent_path="foo/bar", name="baz", user=user
+            ).exists()
+        )
 
         # Re-add the same
-        response = self.client.post(reverse('tree_share', args=[self.path]), data=data)
+        response = self.client.post(reverse("tree_share", args=[self.path]), data=data)
         self.assertEqual(response.status_code, 200)
 
 
@@ -153,34 +169,41 @@ class BlobViewTestCase(BaseViewTestCase):
     def test_get_context_data(self):
         self.maxDiff = None
 
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         context = response.context
-        self.assertEqual(context['path'], self.path)
-        self.assertEqual(context['git_obj'].id, self.git_obj.id)
-        self.assertEqual(context['object'].id, self.blob.id)
-        self.assertEqual(list(context['root_trees']), [])  # No permission on root
-        self.assertEqual(context['breadcrumbs'], ["foo", "foo/bar", "foo/bar/baz", "foo/bar/baz/qux.txt"])
+        self.assertEqual(context["path"], self.path)
+        self.assertEqual(context["git_obj"].id, self.git_obj.id)
+        self.assertEqual(context["object"].id, self.blob.id)
+        self.assertEqual(list(context["root_trees"]), [])  # No permission on root
+        self.assertEqual(
+            context["breadcrumbs"],
+            ["foo", "foo/bar", "foo/bar/baz", "foo/bar/baz/qux.txt"],
+        )
 
     def test_get_hidden(self):
-        response = self.client.get(reverse('repo_browse', args=["path/with/hidden/.file"]))
+        response = self.client.get(
+            reverse("repo_browse", args=["path/with/hidden/.file"])
+        )
         self.assertEqual(response.status_code, 403)
 
     def test_get_unknown(self):
-        response = self.client.get(reverse('repo_browse', args=["toto/coin"]))
+        response = self.client.get(reverse("repo_browse", args=["toto/coin"]))
         self.assertEqual(response.status_code, 404)
 
     def test_check_permissions(self):
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
         user = factories.UserFactory(password="password")
         self.client.login(username=user.username, password="password")
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 403)
 
         tree_path = Path(self.path.parent_path)
-        factories.TreePermissionFactory(parent_path=tree_path.parent_path, name=tree_path.name, user=user)
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        factories.TreePermissionFactory(
+            parent_path=tree_path.parent_path, name=tree_path.name, user=user
+        )
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
 
@@ -202,44 +225,43 @@ class TreeViewTestCase(BaseViewTestCase):
     def test_get_context_data(self):
         self.maxDiff = None
 
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         context = response.context
-        self.assertEqual(context['path'], self.path)
-        self.assertEqual(context['git_obj'].hex, self.git_obj.hex)
-        self.assertEqual(context['object'].id, self.git_obj.hex)
-        self.assertEqual(context['root_trees'], [])  # No permission on root
-        self.assertEqual(context['breadcrumbs'], ["foo", "foo/bar", "foo/bar/baz"])
-        self.assertEqual(context['trees'], [])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(context["path"], self.path)
+        self.assertEqual(context["git_obj"].hex, self.git_obj.hex)
+        self.assertEqual(context["object"].id, self.git_obj.hex)
+        self.assertEqual(context["root_trees"], [])  # No permission on root
+        self.assertEqual(context["breadcrumbs"], ["foo", "foo/bar", "foo/bar/baz"])
+        self.assertEqual(context["trees"], [])
         self.assertEqual(
-            context['blobs'],
-            [
-                {
-                    'name': "qux.txt",
-                    'path': "foo/bar/baz/qux.txt",
-                    'blob': self.blob,
-                }
-            ]
+            context["blobs"],
+            [{"name": "qux.txt", "path": "foo/bar/baz/qux.txt", "blob": self.blob}],
         )
 
     def test_get_hidden(self):
-        response = self.client.get(reverse('repo_browse', args=["path/with/hidden/.directory"]))
+        response = self.client.get(
+            reverse("repo_browse", args=["path/with/hidden/.directory"])
+        )
         self.assertEqual(response.status_code, 403)
 
     def test_get_unknown(self):
-        response = self.client.get(reverse('repo_browse', args=["toto/coin"]))
+        response = self.client.get(reverse("repo_browse", args=["toto/coin"]))
         self.assertEqual(response.status_code, 404)
 
     def test_check_permissions(self):
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
         user = factories.UserFactory(password="password")
         self.client.login(username=user.username, password="password")
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 403)
 
-        factories.TreePermissionFactory(parent_path=self.path.parent_path, name=self.path.name, user=user)
-        response = self.client.get(reverse('repo_browse', args=[self.path]))
+        factories.TreePermissionFactory(
+            parent_path=self.path.parent_path, name=self.path.name, user=user
+        )
+        response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 200)
 
 
@@ -255,12 +277,12 @@ class AdminPermissionTestCase(BaseViewTestCase):
     def test_check_permission(self):
         user = factories.UserFactory(password="pass1")
         self.client.login(username=user.username, password="pass1")
-        response = self.client.get(reverse('repo_browse', args=[""]))
+        response = self.client.get(reverse("repo_browse", args=[""]))
         self.assertEqual(response.status_code, 403)
 
         superuser = factories.SuperUserFactory(password="pass2")
         self.client.login(username=superuser.username, password="pass2")
-        response = self.client.get(reverse('repo_browse', args=[""]))
+        response = self.client.get(reverse("repo_browse", args=[""]))
         self.assertEqual(response.status_code, 200)
 
 
@@ -306,13 +328,15 @@ class CoverageTestCase(VanillaRepositoryMixin, TestCase):
     def test_filter_hidden(self):
         request = RequestFactory()
         request.user = factories.UserFactory()
-        view = views.DummyTreeView(request=request, path=Path("path/with/hidden"), repo=self.repo)
+        view = views.DummyTreeView(
+            request=request, path=Path("path/with/hidden"), repo=self.repo
+        )
 
         blobs = view.filter_blobs()
-        self.assertNotIn(".file", [entry['name'] for entry in blobs])
+        self.assertNotIn(".file", [entry["name"] for entry in blobs])
 
         trees = view.filter_trees(view.path)
-        self.assertNotIn(".directory", [entry['name'] for entry in trees])
+        self.assertNotIn(".directory", [entry["name"] for entry in trees])
 
     def test_dispatch_not_found(self):
         request = RequestFactory()

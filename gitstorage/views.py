@@ -44,6 +44,7 @@ class ObjectViewMixin(object):
 
     You want to inherit from BlobViewMixin, TreeViewMixin, etc.
     """
+
     allowed_types = ()
     # Attributes available when rendering the view
     repo = None
@@ -53,7 +54,9 @@ class ObjectViewMixin(object):
 
     def check_object_type(self):
         """Some views only apply to blobs, other to trees."""
-        logger.debug("check_object_type git_obj=%s type=%s", self.git_obj.hex, self.git_obj.type)
+        logger.debug(
+            "check_object_type git_obj=%s type=%s", self.git_obj.hex, self.git_obj.type
+        )
         if self.git_obj.type not in self.allowed_types:
             raise Http404()
 
@@ -67,7 +70,9 @@ class ObjectViewMixin(object):
 
         Should be in TreeViewMixin buy we want the root trees on every page.
         """
-        allowed_names = models.TreePermission.objects.allowed_names(self.request.user, path)
+        allowed_names = models.TreePermission.objects.allowed_names(
+            self.request.user, path
+        )
         filtered = []
 
         trees, _blobs = self.repo.listdir(path)
@@ -77,12 +82,14 @@ class ObjectViewMixin(object):
                 continue
             if allowed_names is not None and entry.name not in allowed_names:
                 continue
-            filtered.append({
-                'name': entry.name,
-                'path': path.resolve(entry.name),
-                'tree': models.Tree(id=entry.hex),
-            })
-        return sorted(filtered, key=operator.itemgetter('name'))
+            filtered.append(
+                {
+                    "name": entry.name,
+                    "path": path.resolve(entry.name),
+                    "tree": models.Tree(id=entry.hex),
+                }
+            )
+        return sorted(filtered, key=operator.itemgetter("name"))
 
     def load_object(self):
         """Each Git object type has its own Django model.
@@ -106,16 +113,23 @@ class ObjectViewMixin(object):
             breadcrumbs.insert(0, path)
             path = Path(path.parent_path)
 
-        context['path'] = self.path
-        context['git_obj'] = self.git_obj
-        context['object'] = self.object
-        context['root_trees'] = root_trees
-        context['breadcrumbs'] = breadcrumbs
+        context["path"] = self.path
+        context["git_obj"] = self.git_obj
+        context["object"] = self.object
+        context["root_trees"] = root_trees
+        context["breadcrumbs"] = breadcrumbs
         return context
 
     def dispatch(self, request, path, repo=None, git_obj=None, *args, **kwargs):
         """Filtering of hidden files and setting the instance attributes before dispatching."""
-        logger.debug("dispatch self=%s path=%s git_obj=%s args=%s kwargs=%s", self, path, git_obj, args, kwargs)
+        logger.debug(
+            "dispatch self=%s path=%s git_obj=%s args=%s kwargs=%s",
+            self,
+            path,
+            git_obj,
+            args,
+            kwargs,
+        )
         path = Path(path)
         self.path = path
 
@@ -148,16 +162,20 @@ class BlobViewMixin(ObjectViewMixin):
 
     Permission is checked on the parent tree.
     """
+
     allowed_types = (pygit2.GIT_OBJ_BLOB,)
 
     def check_permissions(self):
-        if not models.TreePermission.objects.is_allowed(self.request.user, Path(self.path.parent_path)):
+        if not models.TreePermission.objects.is_allowed(
+            self.request.user, Path(self.path.parent_path)
+        ):
             raise PermissionDenied()
 
 
 class DownloadViewMixin(BlobViewMixin):
     """Download blob data from the storage once permissions are cleared."""
-    content_disposition = 'attachment'
+
+    content_disposition = "attachment"
 
     def get_filename(self):
         """The name under which the blob is currently know, which may not be the name of the data file,
@@ -165,7 +183,7 @@ class DownloadViewMixin(BlobViewMixin):
 
         Also clean up filesystem idiosyncrasies: "de\u0301po\u0302t.jpg" -> "dépôt.jpg".
         """
-        return unicodedata.normalize('NFKC', self.path.name)
+        return unicodedata.normalize("NFKC", self.path.name)
 
     def get_field(self):
         """The FileField to serve, blob.data by default.
@@ -179,23 +197,29 @@ class DownloadViewMixin(BlobViewMixin):
         if settings.DEBUG:
             # Serve ourselves in debug/development mode
             # The serve view handles 304 Not Modified, which is already a big optimization
-            response = static.serve(request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT)
+            response = static.serve(
+                request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT
+            )
         else:
             # In production, let the webserver handle the transfer, so Django can handle another request
             content_type, encoding = mimetypes.guess_type(field.name)
-            content_type = content_type or 'application/octet-stream'
+            content_type = content_type or "application/octet-stream"
             response = HttpResponse(content_type=content_type)
             if encoding:
                 response["Content-Encoding"] = encoding
-            response['X-Accel-Redirect'] = field.url
+            response["X-Accel-Redirect"] = field.url
 
-        response['Content-Disposition'] = "%s; filename=%s" % (self.content_disposition, self.get_filename(),)
+        response["Content-Disposition"] = "%s; filename=%s" % (
+            self.content_disposition,
+            self.get_filename(),
+        )
         return response
 
 
 class InlineViewMixin(DownloadViewMixin):
     """Same as download but try and display the file within the browser."""
-    content_disposition = 'inline'
+
+    content_disposition = "inline"
 
 
 class TreeViewMixin(ObjectViewMixin):
@@ -203,6 +227,7 @@ class TreeViewMixin(ObjectViewMixin):
 
     Permission is checked on the path itself.
     """
+
     allowed_types = (pygit2.GIT_OBJ_TREE,)
 
     def check_permissions(self):
@@ -226,17 +251,19 @@ class TreeViewMixin(ObjectViewMixin):
 
         blobs = []
         for blob_hex, name in hex_to_name.items():
-            blobs.append({
-                'name': name,
-                'path': self.path.resolve(name),
-                'blob': all_blobs[blob_hex],
-            })
-        return sorted(blobs, key=operator.itemgetter('name'))
+            blobs.append(
+                {
+                    "name": name,
+                    "path": self.path.resolve(name),
+                    "blob": all_blobs[blob_hex],
+                }
+            )
+        return sorted(blobs, key=operator.itemgetter("name"))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['trees'] = self.filter_trees(self.path)
-        context['blobs'] = self.filter_blobs()
+        context["trees"] = self.filter_trees(self.path)
+        context["blobs"] = self.filter_blobs()
         return context
 
 
@@ -244,13 +271,15 @@ class SharesViewMixin(TreeViewMixin):
     form_class = forms.RemoveUsersForm
 
     def get_form(self):
-        current_permissions = models.TreePermission.objects.current_permissions(self.path)
-        current_user_ids = current_permissions.values_list('user', flat=True)
+        current_permissions = models.TreePermission.objects.current_permissions(
+            self.path
+        )
+        current_user_ids = current_permissions.values_list("user", flat=True)
 
         return self.get_form_class()(current_user_ids, **self.get_form_kwargs())
 
     def form_valid(self, form):
-        users = form.cleaned_data['users']
+        users = form.cleaned_data["users"]
         models.TreePermission.objects.remove(users, self.path)
 
         return super().form_valid(form)
@@ -260,13 +289,15 @@ class ShareViewMixin(TreeViewMixin):
     form_class = forms.AddUsersForm
 
     def get_form(self):
-        current_permissions = models.TreePermission.objects.current_permissions(self.path)
-        current_user_ids = current_permissions.values_list('user', flat=True)
+        current_permissions = models.TreePermission.objects.current_permissions(
+            self.path
+        )
+        current_user_ids = current_permissions.values_list("user", flat=True)
 
         return self.get_form_class()(current_user_ids, **self.get_form_kwargs())
 
     def form_valid(self, form):
-        users = form.cleaned_data['users']
+        users = form.cleaned_data["users"]
         models.TreePermission.objects.add(users, self.path)
 
         return super().form_valid(form)
@@ -280,10 +311,10 @@ class AdminPermissionMixin(object):
             raise PermissionDenied()
         # This is the only condition, permissions don't make sense once you're admin
 
-class AuthenticatedPermissionMixin(object):
 
+class AuthenticatedPermissionMixin(object):
     def check_permissions(self):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             raise PermissionDenied()
         # Being authenticated is good but not enough
         return super().check_permissions()
@@ -310,17 +341,20 @@ class BaseRepositoryView(ObjectViewMixin, generic_views.View):
         # sanitize keyword arguments
         for key in initkwargs:
             if key in cls.http_method_names:
-                raise TypeError("You tried to pass in the %s method name as a "
-                                "keyword argument to %s(). Don't do that."
-                                % (key, cls.__name__))
+                raise TypeError(
+                    "You tried to pass in the %s method name as a "
+                    "keyword argument to %s(). Don't do that." % (key, cls.__name__)
+                )
             if not hasattr(cls, key):
-                raise TypeError("%s() received an invalid keyword %r. as_view "
-                                "only accepts arguments that are already "
-                                "attributes of the class." % (cls.__name__, key))
+                raise TypeError(
+                    "%s() received an invalid keyword %r. as_view "
+                    "only accepts arguments that are already "
+                    "attributes of the class." % (cls.__name__, key)
+                )
 
         def view(request, path, *args, **kwargs):
             # BEGIN gitstorage specific
-            repo = kwargs['repo'] = repository.Repository()
+            repo = kwargs["repo"] = repository.Repository()
 
             # Path methods must be mapped in the URLconf
             path = Path(path)
@@ -328,7 +362,7 @@ class BaseRepositoryView(ObjectViewMixin, generic_views.View):
                 raise Http404()
 
             try:
-                git_obj = kwargs['git_obj'] = repo.open(path)
+                git_obj = kwargs["git_obj"] = repo.open(path)
             except KeyError:
                 raise Http404()
 
@@ -340,7 +374,7 @@ class BaseRepositoryView(ObjectViewMixin, generic_views.View):
             # END gitstorage specific
 
             self = view_class(**initkwargs)
-            if hasattr(self, 'get') and not hasattr(self, 'head'):
+            if hasattr(self, "get") and not hasattr(self, "head"):
                 self.head = self.get
             self.request = request
             self.args = args

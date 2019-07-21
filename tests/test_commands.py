@@ -23,13 +23,18 @@ from gitstorage.tests.utils import VanillaRepositoryMixin
 
 
 class SyncBlobMedataTestCase(VanillaRepositoryMixin, TestCase):
-
     def test_sync(self):
         """Creating objects for new blobs."""
         repo = repository.Repository()
 
         self.assertQuerysetEqual(models.Blob.objects.all(), [])
-        call_command("sync_blobs", "refs/heads/master", "0" * 40, str(repo.head.target), verbosity=0)
+        call_command(
+            "sync_blobs",
+            "refs/heads/master",
+            "0" * 40,
+            str(repo.head.target),
+            verbosity=0,
+        )
         blob = models.Blob.objects.get(id="257cc5642cb1a054f08cc83f2d943e56fd3ebe99")
         self.assertEqual(blob.size, 4)
 
@@ -37,39 +42,69 @@ class SyncBlobMedataTestCase(VanillaRepositoryMixin, TestCase):
         """Safely ignore blobs already treated."""
         repo = repository.Repository()
 
-        call_command("sync_blobs", "refs/heads/master", "0" * 40, str(repo.head.target), verbosity=0)
+        call_command(
+            "sync_blobs",
+            "refs/heads/master",
+            "0" * 40,
+            str(repo.head.target),
+            verbosity=0,
+        )
         count = models.Blob.objects.count()
-        call_command("sync_blobs", "refs/heads/master", "0" * 40, str(repo.head.target), verbosity=0)
-        call_command("sync_blobs", "refs/heads/master", "0" * 40, str(repo.head.target), verbosity=0)
+        call_command(
+            "sync_blobs",
+            "refs/heads/master",
+            "0" * 40,
+            str(repo.head.target),
+            verbosity=0,
+        )
+        call_command(
+            "sync_blobs",
+            "refs/heads/master",
+            "0" * 40,
+            str(repo.head.target),
+            verbosity=0,
+        )
         self.assertEqual(models.Blob.objects.count(), count)
 
     def test_partial_sync(self):
         repository.Repository()
 
         call_command(
-            "sync_blobs", "refs/heads/master",
-            "0" * 40, "6780fb7f2ae0bced73f951e0d2dd6448a50a2318", verbosity=0,
+            "sync_blobs",
+            "refs/heads/master",
+            "0" * 40,
+            "6780fb7f2ae0bced73f951e0d2dd6448a50a2318",
+            verbosity=0,
         )
         # Two files in the initial commit
         self.assertEqual(models.Blob.objects.count(), 2)
 
         call_command(
-            "sync_blobs", "refs/heads/master",
-            "6780fb7f2ae0bced73f951e0d2dd6448a50a2318", "c56e723761909ea406790c946da307fd681fe647", verbosity=0,
+            "sync_blobs",
+            "refs/heads/master",
+            "6780fb7f2ae0bced73f951e0d2dd6448a50a2318",
+            "c56e723761909ea406790c946da307fd681fe647",
+            verbosity=0,
         )
         # Added an (hidden) file
         self.assertEqual(models.Blob.objects.count(), 3)
 
         call_command(
-            "sync_blobs", "refs/heads/master",
-            "c56e723761909ea406790c946da307fd681fe647", "9c2c91388ca1b5b6e247038f2644493ff47f116e", verbosity=0,
+            "sync_blobs",
+            "refs/heads/master",
+            "c56e723761909ea406790c946da307fd681fe647",
+            "9c2c91388ca1b5b6e247038f2644493ff47f116e",
+            verbosity=0,
         )
         # Added an empty file in an (hidden) directory (same OID, so no new object)
         self.assertEqual(models.Blob.objects.count(), 3)
 
         call_command(
-            "sync_blobs", "refs/heads/master",
-            "9c2c91388ca1b5b6e247038f2644493ff47f116e", "d104ab48cc867e89928e0094d192e5516a98dd25", verbosity=0,
+            "sync_blobs",
+            "refs/heads/master",
+            "9c2c91388ca1b5b6e247038f2644493ff47f116e",
+            "d104ab48cc867e89928e0094d192e5516a98dd25",
+            verbosity=0,
         )
         # Added a (UTF-8 filename) file
         self.assertEqual(models.Blob.objects.count(), 4)
@@ -83,8 +118,13 @@ class SyncBlobMedataTestCase(VanillaRepositoryMixin, TestCase):
         self.assertQuerysetEqual(models.Blob.objects.all(), [])
 
         call_command(
-            "sync_blobs", "refs/heads/branch", "0" * 40, str(repo.head.target), verbosity=1,
-            stdout=stdout, stderr=stderr,
+            "sync_blobs",
+            "refs/heads/branch",
+            "0" * 40,
+            str(repo.head.target),
+            verbosity=1,
+            stdout=stdout,
+            stderr=stderr,
         )
 
         # Nothing done
@@ -96,8 +136,13 @@ class SyncBlobMedataTestCase(VanillaRepositoryMixin, TestCase):
 
         repo = repository.Repository()
         call_command(
-            "sync_blobs", "refs/heads/master", "0" * 40, str(repo.head.target), verbosity=2,
-            stdout=stdout, stderr=stderr,
+            "sync_blobs",
+            "refs/heads/master",
+            "0" * 40,
+            str(repo.head.target),
+            verbosity=2,
+            stdout=stdout,
+            stderr=stderr,
         )
 
         self.assertNotEqual(stdout.getvalue(), "")

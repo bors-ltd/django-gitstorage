@@ -24,7 +24,6 @@ from django.core.exceptions import ImproperlyConfigured
 
 
 class Repository(pygit2.Repository):
-
     def __init__(self, *args, **kwargs):
         try:
             path = settings.GITSTORAGE_REPOSITORY
@@ -32,7 +31,7 @@ class Repository(pygit2.Repository):
             raise ImproperlyConfigured("GITSTORAGE_REPOSITORY is required")
         super().__init__(path, *args, **kwargs)
         # Not strictly required but sane, gitstorage is not designed for checkouts
-        #assert self.is_bare
+        # assert self.is_bare
         # Always load the index
         self.index.read_tree(self.tree.id)
 

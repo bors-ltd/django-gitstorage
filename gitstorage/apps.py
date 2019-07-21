@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class GitStorageConfig(AppConfig):
-    name = 'gitstorage'
+    name = "gitstorage"
     verbose_name = "GitStorage"

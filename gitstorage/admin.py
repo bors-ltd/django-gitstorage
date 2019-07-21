@@ -19,13 +19,15 @@ from . import models
 
 
 class BlobAdmin(admin.ModelAdmin):
-    search_fields = ['id']
+    search_fields = ["id"]
+
 
 admin.site.register(models.Blob, BlobAdmin)
 
 
 class TreePermissionAdmin(admin.ModelAdmin):
-    search_fields = ['parent_path', 'name']
-    list_filter = ['user']
+    search_fields = ["parent_path", "name"]
+    list_filter = ["user"]
+
 
 admin.site.register(models.TreePermission, TreePermissionAdmin)

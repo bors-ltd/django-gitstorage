@@ -27,7 +27,7 @@ for mimetype, ext in [
 ]:
     mimetypes.add_type(mimetype, ext)
 
-__all__ = ['guess_type']
+__all__ = ["guess_type"]
 
 
 def guess_type(url, strict=False):

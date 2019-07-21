@@ -19,7 +19,6 @@ from gitstorage import factories
 
 
 class UserFactoryTestCase(TestCase):
-
     def test_password(self):
         user = factories.UserFactory(password="passwd")
         self.assertTrue(user.check_password("passwd"))

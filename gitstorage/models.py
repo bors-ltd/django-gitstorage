@@ -107,7 +107,7 @@ class TreePermissionQuerySet(models.QuerySet):
             if user.is_superuser:
                 # Reads as no restriction
                 return None
-            if not user.is_authenticated():
+            if not user.is_authenticated:
                 user = None
         return self.filter(parent_path=parent_path, user=user, **kwargs).values_list(
             "name", flat=True
@@ -118,14 +118,14 @@ class TreePermissionQuerySet(models.QuerySet):
             if user.is_superuser:
                 # Reads as no restriction
                 return None
-            if not user.is_authenticated():
+            if not user.is_authenticated:
                 user = None
         all_permissions = self.filter(user=user).values_list("parent_path", "name")
         return ["/".join(filter(None, segments)) for segments in all_permissions]
 
     def for_user(self, user, path, **kwargs):
         if user:
-            if not user.is_authenticated():
+            if not user.is_authenticated:
                 user = None
         return self.filter(
             user=user, parent_path=path.parent_path, name=path.name, **kwargs
@@ -133,7 +133,7 @@ class TreePermissionQuerySet(models.QuerySet):
 
     def other_permissions(self, user, path, **kwargs):
         if user:
-            if not user.is_authenticated():
+            if not user.is_authenticated:
                 user = None
         return (
             self.filter(user=user, parent_path=path.parent_path, **kwargs)

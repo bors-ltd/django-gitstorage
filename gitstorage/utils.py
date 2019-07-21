@@ -19,12 +19,13 @@ class Path(str):
 
     Think of the shell's dirname and basename.
     """
+
     parent_path = None
     name = None
 
     def __new__(cls, path):
         if isinstance(path, bytes):
-            path = path.decode('utf8')  # Git encoding
+            path = path.decode("utf8")  # Git encoding
 
         # Filter out leading and trailing "/"
         segments = [segment for segment in path.split("/") if segment]
@@ -39,7 +40,7 @@ class Path(str):
         # Reconstruct the cleaned path
         if name:
             segments.append(name)
-        path = str.__new__(cls,  "/".join(segments))
+        path = str.__new__(cls, "/".join(segments))
 
         # Attach properties
         path.parent_path = parent_path
@@ -50,7 +51,7 @@ class Path(str):
     def resolve(self, name):
         """Join the path and a name, always with "/" for Git."""
         if isinstance(name, bytes):
-            name = name.decode('utf8')  # Git encoding
+            name = name.decode("utf8")  # Git encoding
         if self:
             return self + "/" + name
         # Root

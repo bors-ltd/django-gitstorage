@@ -19,7 +19,6 @@ from django.utils.translation import ugettext_lazy as _
 
 
 class UsersChoiceField(forms.ModelMultipleChoiceField):
-
     def __init__(self, **kwargs):
         # Since superusers always are allowed, filter them out by default
         queryset = auth_models.User.objects.filter(is_superuser=False)
@@ -34,7 +33,9 @@ class RemoveUsersForm(forms.Form):
 
     def __init__(self, current_user_ids, **kwargs):
         super().__init__(**kwargs)
-        self.fields['users'].queryset = self.fields['users'].queryset.filter(pk__in=current_user_ids)
+        self.fields["users"].queryset = self.fields["users"].queryset.filter(
+            pk__in=current_user_ids
+        )
 
 
 class AddUsersForm(forms.Form):
@@ -42,7 +43,9 @@ class AddUsersForm(forms.Form):
 
     def __init__(self, current_user_ids, **kwargs):
         super().__init__(**kwargs)
-        self.fields['users'].queryset = self.fields['users'].queryset.exclude(pk__in=current_user_ids)
+        self.fields["users"].queryset = self.fields["users"].queryset.exclude(
+            pk__in=current_user_ids
+        )
 
 
 class UploadForm(forms.Form):

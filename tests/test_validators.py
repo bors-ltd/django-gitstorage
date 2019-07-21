@@ -20,7 +20,6 @@ from gitstorage import validators
 
 
 class PathValidatorTestCase(TestCase):
-
     def test_validator(self):
         self.assertIsNone(validators.path_validator("my/path"))
 
@@ -33,7 +32,6 @@ class PathValidatorTestCase(TestCase):
 
 
 class NameValidator(TestCase):
-
     def test_validator(self):
         self.assertIsNone(validators.name_validator("my_name"))
 

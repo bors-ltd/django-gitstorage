@@ -13,45 +13,98 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-    ]
+    dependencies = [migrations.swappable_dependency(settings.AUTH_USER_MODEL)]
 
     operations = [
         migrations.CreateModel(
-            name='Tree',
+            name="Tree",
             fields=[
-                ('id', models.CharField(editable=False, max_length=40, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.CharField(
+                        editable=False, max_length=40, primary_key=True, serialize=False
+                    ),
+                )
+            ],
+            options={"managed": False},
+        ),
+        migrations.CreateModel(
+            name="Blob",
+            fields=[
+                (
+                    "id",
+                    models.CharField(
+                        editable=False, max_length=40, primary_key=True, serialize=False
+                    ),
+                ),
+                ("size", models.IntegerField()),
+                (
+                    "data",
+                    models.FileField(
+                        storage=django.core.files.storage.FileSystemStorage(
+                            base_url="/data/", location="gitstorage"
+                        ),
+                        upload_to=gitstorage.models.blob_upload_to,
+                    ),
+                ),
+                (
+                    "mimetype",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, verbose_name="mimetype"
+                    ),
+                ),
             ],
             options={
-                'managed': False,
+                "verbose_name": "Blob",
+                "verbose_name_plural": "Blobs",
+                "swappable": "GITSTORAGE_BLOB_MODEL",
             },
         ),
         migrations.CreateModel(
-            name='Blob',
+            name="TreePermission",
             fields=[
-                ('id', models.CharField(editable=False, max_length=40, primary_key=True, serialize=False)),
-                ('size', models.IntegerField()),
-                ('data', models.FileField(storage=django.core.files.storage.FileSystemStorage(base_url='/data/', location='gitstorage'), upload_to=gitstorage.models.blob_upload_to)),
-                ('mimetype', models.CharField(blank=True, max_length=255, null=True, verbose_name='mimetype')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "parent_path",
+                    models.CharField(
+                        blank=True,
+                        db_index=True,
+                        max_length=2048,
+                        validators=[gitstorage.validators.path_validator],
+                        verbose_name="parent path",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        blank=True,
+                        db_index=True,
+                        max_length=256,
+                        validators=[gitstorage.validators.name_validator],
+                        verbose_name="name",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Blob',
-                'verbose_name_plural': 'Blobs',
-                'swappable': 'GITSTORAGE_BLOB_MODEL',
-            },
-        ),
-        migrations.CreateModel(
-            name='TreePermission',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('parent_path', models.CharField(blank=True, db_index=True, max_length=2048, validators=[gitstorage.validators.path_validator], verbose_name='parent path')),
-                ('name', models.CharField(blank=True, db_index=True, max_length=256, validators=[gitstorage.validators.name_validator], verbose_name='name')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'verbose_name': 'tree permission',
-                'verbose_name_plural': 'tree permissions',
+                "verbose_name": "tree permission",
+                "verbose_name_plural": "tree permissions",
             },
         ),
     ]

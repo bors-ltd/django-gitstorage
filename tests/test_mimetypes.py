@@ -19,6 +19,5 @@ from gitstorage import mimetypes
 
 
 class MimetypesTestCase(TestCase):
-
     def test_guess_type(self):
         self.assertEqual(mimetypes.guess_type("image.xcf"), ("image/x-xcf", None))
