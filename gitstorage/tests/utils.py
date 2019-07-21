@@ -22,6 +22,7 @@ from django.conf import settings
 
 class NewRepositoryMixin(object):
     def setUp(self):
+        super().setUp()
         self.tempdir = tempfile.mkdtemp("gitstorage")
         location = os.path.join(self.tempdir, "scratch")
         settings.GITSTORAGE_REPOSITORY = location
@@ -29,10 +30,12 @@ class NewRepositoryMixin(object):
     def tearDown(self):
         delattr(settings, "GITSTORAGE_REPOSITORY")
         shutil.rmtree(self.tempdir, ignore_errors=True)
+        super().tearDown()
 
 
 class VanillaRepositoryMixin(object):
     def setUp(self):
+        super().setUp()
         self.tempdir = tempfile.mkdtemp("gitstorage")
         location = os.path.join(self.tempdir, "vanilla")
         shutil.copytree(os.path.join(os.path.dirname(__file__), "vanilla"), location)
@@ -41,3 +44,4 @@ class VanillaRepositoryMixin(object):
     def tearDown(self):
         delattr(settings, "GITSTORAGE_REPOSITORY")
         shutil.rmtree(self.tempdir, ignore_errors=True)
+        super().tearDown()

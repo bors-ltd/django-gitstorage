@@ -124,17 +124,16 @@ class TreePermissionQuerySet(models.QuerySet):
         return ["/".join(filter(None, segments)) for segments in all_permissions]
 
     def for_user(self, user, path, **kwargs):
-        if user:
-            if not user.is_authenticated:
-                user = None
-        return self.filter(
+        if user and not user.is_authenticated:
+            user = None
+        qs = self.filter(
             user=user, parent_path=path.parent_path, name=path.name, **kwargs
         )
+        return qs
 
     def other_permissions(self, user, path, **kwargs):
-        if user:
-            if not user.is_authenticated:
-                user = None
+        if user and not user.is_authenticated:
+            user = None
         return (
             self.filter(user=user, parent_path=path.parent_path, **kwargs)
             .exclude(name=path.name)
@@ -142,9 +141,8 @@ class TreePermissionQuerySet(models.QuerySet):
         )
 
     def is_allowed(self, user, path, **kwargs):
-        if user:
-            if user.is_superuser:
-                return True
+        if user and user.is_superuser:
+            return True
         return self.for_user(user, path, **kwargs).exists()
 
     def add(self, users, path):
@@ -153,11 +151,10 @@ class TreePermissionQuerySet(models.QuerySet):
 
     def remove(self, users, path):
         # Does not work for [None]
-        if None in users:
-            for user in users:
-                self.filter(
-                    parent_path=path.parent_path, name=path.name, user=user
-                ).delete()
+        if users == [None]:
+            self.filter(
+                parent_path=path.parent_path, name=path.name, user=None
+            ).delete()
         else:
             self.filter(
                 parent_path=path.parent_path, name=path.name, user__in=users
