@@ -33,15 +33,9 @@ class UserFactory(factory.DjangoModelFactory):
     last_name = factory.Sequence("Doe{}".format)
     email = factory.Sequence("john.doe{}@example.com".format)
 
-    @classmethod
-    def _prepare(cls, create, **kwargs):
-        password = kwargs.pop("password", None)
-        user = super()._prepare(create, **kwargs)
-        if password:
-            user.set_password(password)
-            if create:
-                user.save()
-        return user
+    @factory.post_generation
+    def password(self, create, override, **kwargs):
+        self.set_password(override)
 
 
 class SuperUserFactory(UserFactory):

@@ -43,7 +43,7 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
 
         self.path = Path(self.path)
         self.user = factories.UserFactory(password="password")
-        self.client.login(username=self.user.username, password="password")
+        assert self.client.login(username=self.user.username, password="password")
 
         git_obj = self.repo.open(self.path)
 
@@ -195,7 +195,7 @@ class BlobViewTestCase(BaseViewTestCase):
         self.assertEqual(response.status_code, 200)
 
         user = factories.UserFactory(password="password")
-        self.client.login(username=user.username, password="password")
+        assert self.client.login(username=user.username, password="password")
         response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 403)
 
@@ -254,7 +254,7 @@ class TreeViewTestCase(BaseViewTestCase):
         self.assertEqual(response.status_code, 200)
 
         user = factories.UserFactory(password="password")
-        self.client.login(username=user.username, password="password")
+        assert self.client.login(username=user.username, password="password")
         response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 403)
 
@@ -276,12 +276,12 @@ class AdminPermissionTestCase(BaseViewTestCase):
 
     def test_check_permission(self):
         user = factories.UserFactory(password="pass1")
-        self.client.login(username=user.username, password="pass1")
+        assert self.client.login(username=user.username, password="pass1")
         response = self.client.get(reverse("repo_browse", args=[""]))
         self.assertEqual(response.status_code, 403)
 
         superuser = factories.SuperUserFactory(password="pass2")
-        self.client.login(username=superuser.username, password="pass2")
+        assert self.client.login(username=superuser.username, password="pass2")
         response = self.client.get(reverse("repo_browse", args=[""]))
         self.assertEqual(response.status_code, 200)
 
