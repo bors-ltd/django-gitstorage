@@ -4,12 +4,9 @@ PYLINT_RC=".pylintrc"
 all:
 
 clean:
-	find $(PACKAGE) "(" -name "*.pyc" -or -name "*.pyo" -or -name "*.mo" -or -name "*.so" ")" -delete
-	find $(PACKAGE) -type d -empty -delete
-	find $(PACKAGE) -name __pycache__ -delete
-	find tests "(" -name "*.pyc" -or -name "*.pyo" -or -name "*.mo" -or -name "*.so" ")" -delete
-	find tests -type d -empty -delete
-	find tests -name __pycache__ -delete
+	find $(PACKAGE) tests "(" -name "*.pyc" -or -name "*.pyo" -or -name "*.mo" -or -name "*.so" ")" -delete
+	find $(PACKAGE) tests -type d -empty -delete
+	find $(PACKAGE) tests -name __pycache__ -delete
 
 docs:
 	rst2html.py README.rst > README.html
