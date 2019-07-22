@@ -251,11 +251,14 @@ class TreeViewMixin(ObjectViewMixin):
 
         blobs = []
         for blob_hex, name in hex_to_name.items():
+            blob = all_blobs[blob_hex]
             blobs.append(
                 {
                     "name": name,
                     "path": self.path.resolve(name),
-                    "blob": all_blobs[blob_hex],
+                    "blob": blob,
+                    "ctime": blob.ctime,
+                    "mtime": blob.mtime,
                 }
             )
         return sorted(blobs, key=self.sort_key, reverse=self.sort_reverse)

@@ -60,6 +60,8 @@ def blob_upload_to(instance, filename):
 class BaseBlob(BaseObject):
     size = models.IntegerField()
     data = models.FileField(upload_to=blob_upload_to, storage=storage.default_storage)
+    ctime = models.DateTimeField(auto_now_add=True)
+    mtime = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.id
