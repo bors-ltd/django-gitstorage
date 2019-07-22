@@ -229,6 +229,8 @@ class TreeViewMixin(ObjectViewMixin):
     """
 
     allowed_types = (pygit2.GIT_OBJ_TREE,)
+    sort_key = operator.itemgetter("name")
+    sort_reverse = False
 
     def check_permissions(self):
         if not models.TreePermission.objects.is_allowed(self.request.user, self.path):
@@ -256,7 +258,7 @@ class TreeViewMixin(ObjectViewMixin):
                     "blob": all_blobs[blob_hex],
                 }
             )
-        return sorted(blobs, key=operator.itemgetter("name"))
+        return sorted(blobs, key=self.sort_key, reverse=self.sort_reverse)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
