@@ -245,9 +245,7 @@ class TreeViewMixin(ObjectViewMixin):
             hex_to_name[entry.hex] = entry.name
 
         # Fetch blobs for all of the entries in a single query
-        all_blobs = {}
-        for blob in Blob.objects.filter(pk__in=hex_to_name.keys()):
-            all_blobs[blob.pk] = blob
+        all_blobs = Blob.objects.in_bulk(hex_to_name.keys())
 
         blobs = []
         for blob_hex, name in hex_to_name.items():
