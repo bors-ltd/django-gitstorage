@@ -374,10 +374,16 @@ class BaseRepositoryView(ObjectViewMixin, generic_views.View):
             self = view_class(**initkwargs)
             if hasattr(self, "get") and not hasattr(self, "head"):
                 self.head = self.get
-            self.request = request
-            self.args = args
-            self.kwargs = kwargs
+            self.setup(request, *args, **kwargs)
+            if not hasattr(self, "request"):
+                raise AttributeError(
+                    "%s instance has no 'request' attribute. Did you override "
+                    "setup() and forget to call super()?" % cls.__name__
+                )
             return self.dispatch(request, path, *args, **kwargs)
+
+        view.view_class = cls
+        view.view_initkwargs = initkwargs
 
         # take name and docstring from class
         update_wrapper(view, cls, updated=())
