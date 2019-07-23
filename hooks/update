@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Inspired from howto/update-hook-example.txt in git docs
 
