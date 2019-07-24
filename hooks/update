@@ -2,9 +2,15 @@
 
 # Inspired from howto/update-hook-example.txt in git docs
 
+VIRTUAL_ENV=XXX  # Path to venv
+export DJANGO_SETTINGS_MODULE="xxx.settings"  # Project settings
+
 # If you are having trouble with this hook script
 # you can try setting this to true.
 verbose=false
+
+# you shouldn't have to modify anything below this line
+# -----------------------------------------------------
 
 # Default shell globbing messes things up downstream
 GLOBIGNORE=*
@@ -15,9 +21,6 @@ export LC_ALL=en_US.UTF-8
 function info {
     $verbose && echo >&2 "-Info-          $1"
 }
-
-VIRTUAL_ENV=XXX
-export DJANGO_SETTINGS_MODULE="xxx.settings"
 
 REFNAME=$1
 OLD_OBJECT=$2
