@@ -80,7 +80,8 @@ class DownloadViewTestCase(BaseViewTestCase):
         response = self.client.get(reverse("blob_download", args=[self.path]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response["Content-Disposition"], "attachment; filename=dépôt.txt"
+            response["Content-Disposition"],
+            "attachment; filename=\"depot.txt\"; filename*=UTF-8''d%C3%A9p%C3%B4t.txt",
         )
 
 
@@ -90,7 +91,7 @@ class InlineViewTestCase(BaseViewTestCase):
     def test_get(self):
         response = self.client.get(reverse("blob_inline", args=[self.path]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response["Content-Disposition"], "inline; filename=dépôt.txt")
+        self.assertEqual(response["Content-Length"], "9")
 
 
 class SharesViewTestCase(BaseViewTestCase):

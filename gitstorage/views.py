@@ -18,17 +18,15 @@ import logging
 import operator
 import unicodedata
 
-from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http.response import Http404, HttpResponse
+from django.http.response import Http404
 from django.utils.decorators import classonlymethod
 from django.views import generic as generic_views
-from django.views import static
 
 import pygit2
+import sendfile
 
 from . import forms
-from . import mimetypes
 from . import models
 from . import repository
 from .utils import Path
@@ -175,7 +173,7 @@ class BlobViewMixin(ObjectViewMixin):
 class DownloadViewMixin(BlobViewMixin):
     """Download blob data from the storage once permissions are cleared."""
 
-    content_disposition = "attachment"
+    attachment = True
 
     def get_filename(self):
         """The name under which the blob is currently know, which may not be the name of the data file,
@@ -194,32 +192,18 @@ class DownloadViewMixin(BlobViewMixin):
 
     def get(self, request, *args, **kwargs):
         field = self.get_field()
-        if settings.DEBUG:
-            # Serve ourselves in debug/development mode
-            # The serve view handles 304 Not Modified, which is already a big optimization
-            response = static.serve(
-                request, field.name, document_root=settings.GITSTORAGE_DATA_ROOT
-            )
-        else:
-            # In production, let the webserver handle the transfer, so Django can handle another request
-            content_type, encoding = mimetypes.guess_type(field.name)
-            content_type = content_type or "application/octet-stream"
-            response = HttpResponse(content_type=content_type)
-            if encoding:
-                response["Content-Encoding"] = encoding
-            response["X-Accel-Redirect"] = field.url
-
-        response["Content-Disposition"] = "%s; filename=%s" % (
-            self.content_disposition,
-            self.get_filename(),
+        return sendfile.sendfile(
+            request,
+            field.storage.path(field.name),  # absolute path
+            attachment=self.attachment,
+            attachment_filename=self.get_filename(),
         )
-        return response
 
 
 class InlineViewMixin(DownloadViewMixin):
     """Same as download but try and display the file within the browser."""
 
-    content_disposition = "inline"
+    attachment = False
 
 
 class TreeViewMixin(ObjectViewMixin):

@@ -27,12 +27,12 @@ class TestFormViewMixin(object):
         return HttpResponse(str(form.errors))
 
 
-class TestInlineView(views.InlineViewMixin, generic.TemplateView):
-    template_name = "base.html"
+class TestInlineView(views.InlineViewMixin, generic.View):
+    pass
 
 
-class TestDownloadView(views.DownloadViewMixin, generic.TemplateView):
-    template_name = "base.html"
+class TestDownloadView(views.DownloadViewMixin, generic.View):
+    pass
 
 
 class TestSharesView(views.SharesViewMixin, TestFormViewMixin, generic.FormView):
