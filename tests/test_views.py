@@ -18,6 +18,7 @@ import pygit2
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from django.utils import timezone
 from django.http.response import Http404
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -234,9 +235,16 @@ class TreeViewTestCase(BaseViewTestCase):
         self.assertEqual(context["root_trees"], [])  # No permission on root
         self.assertEqual(context["breadcrumbs"], ["foo", "foo/bar", "foo/bar/baz"])
         self.assertEqual(context["trees"], [])
-        self.assertEqual(
-            context["blobs"],
-            [{"name": "qux.txt", "path": "foo/bar/baz/qux.txt", "blob": self.blob}],
+        self.assertEqual(len(context["blobs"]), 1)
+        blob = context["blobs"][0]
+        self.assertEqual(blob["name"], "qux.txt")
+        self.assertEqual(blob["path"], "foo/bar/baz/qux.txt")
+        self.assertEqual(blob["blob"], self.blob)
+        self.assertAlmostEqual(
+            blob["ctime"].timestamp(), timezone.now().timestamp(), delta=1
+        )
+        self.assertAlmostEqual(
+            blob["mtime"].timestamp(), timezone.now().timestamp(), delta=1
         )
 
     def test_get_hidden(self):
