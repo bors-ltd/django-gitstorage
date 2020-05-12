@@ -53,7 +53,7 @@ class ObjectViewMixin(object):
     def check_object_type(self):
         """Some views only apply to blobs, other to trees."""
         logger.debug(
-            "check_object_type git_obj=%s type=%s", self.git_obj.hex, self.git_obj.type
+            "check_object_type git_obj=%s type=%s", self.git_obj.hex, self.git_obj.type_str
         )
         if self.git_obj.type not in self.allowed_types:
             raise Http404()
@@ -94,9 +94,9 @@ class ObjectViewMixin(object):
 
         Trees are in-memory objects built on the fly.
         """
-        if self.git_obj.type is pygit2.GIT_OBJ_BLOB:
+        if self.git_obj.type == pygit2.GIT_OBJ_BLOB:
             self.object = Blob.objects.get(pk=self.git_obj.hex)
-        elif self.git_obj.type is pygit2.GIT_OBJ_TREE:
+        elif self.git_obj.type == pygit2.GIT_OBJ_TREE:
             self.object = models.Tree(pk=self.git_obj.hex)
 
     def get_context_data(self, **kwargs):

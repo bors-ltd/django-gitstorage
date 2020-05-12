@@ -39,9 +39,9 @@ class Command(BaseCommand):
     def sync_tree(self, tree):
         """Recursively traverse a tree and create an object for every of its blobs."""
         for entry in tree:
-            if entry.type == "tree":
+            if entry.type == pygit2.GIT_OBJ_TREE:
                 self.sync_tree(self.repo[entry.id])
-            elif entry.type == "blob":
+            elif entry.type == pygit2.GIT_OBJ_BLOB:
                 if entry.hex in self.known_blobs:
                     continue
                 git_obj = self.repo[entry.id]
@@ -88,7 +88,8 @@ class Command(BaseCommand):
         end_oid = options["end_oid"]
         if options["verbosity"]:
             self.stdout.write(
-                "Synchronising blobs from {} to {}...".format(start_oid, end_oid)
+                "Synchronising blobs from {} to {}...".format(
+                    start_oid, end_oid)
             )
 
         self.walk(start_oid, end_oid)
@@ -96,5 +97,6 @@ class Command(BaseCommand):
         if options["verbosity"]:
             counter_after = len(self.known_blobs)
             self.stdout.write(
-                "Done, {} blobs created.".format(counter_after - counter_before)
+                "Done, {} blobs created.".format(
+                    counter_after - counter_before)
             )

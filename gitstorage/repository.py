@@ -69,8 +69,8 @@ class Repository(pygit2.Repository):
         tree = self.open(path)
         trees, blobs = [], []
         for entry in tree:
-            if entry.type == "blob":
+            if entry.type == pygit2.GIT_OBJ_BLOB:
                 blobs.append(entry)
-            elif entry.type == "tree":
+            elif entry.type == pygit2.GIT_OBJ_TREE:
                 trees.append(entry)
         return trees, blobs
