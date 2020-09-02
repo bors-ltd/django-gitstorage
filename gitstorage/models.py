@@ -17,7 +17,7 @@ import os.path
 from django.apps import apps as django_apps
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from . import mimetypes
 from . import storage
