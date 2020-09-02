@@ -24,7 +24,7 @@ class AnonymousUserFactory(factory.Factory):
         model = auth_models.AnonymousUser
 
 
-class UserFactory(factory.DjangoModelFactory):
+class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = auth_models.User
 
@@ -43,14 +43,14 @@ class SuperUserFactory(UserFactory):
     is_superuser = True
 
 
-class BlobFactory(factory.DjangoModelFactory):
+class BlobFactory(factory.django.DjangoModelFactory):
     size = 0
 
     class Meta:
         model = models.Blob
 
 
-class TreeFactory(factory.DjangoModelFactory):
+class TreeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = models.Tree
 
@@ -60,7 +60,7 @@ class TreeFactory(factory.DjangoModelFactory):
         return None
 
 
-class TreePermissionFactory(factory.DjangoModelFactory):
+class TreePermissionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = models.TreePermission
 

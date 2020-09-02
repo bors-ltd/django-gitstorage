@@ -23,8 +23,8 @@ from django.http.response import Http404
 from django.utils.decorators import classonlymethod
 from django.views import generic as generic_views
 
+import django_sendfile
 import pygit2
-import sendfile
 
 from . import forms
 from . import models
@@ -53,7 +53,9 @@ class ObjectViewMixin(object):
     def check_object_type(self):
         """Some views only apply to blobs, other to trees."""
         logger.debug(
-            "check_object_type git_obj=%s type=%s", self.git_obj.hex, self.git_obj.type_str
+            "check_object_type git_obj=%s type=%s",
+            self.git_obj.hex,
+            self.git_obj.type_str,
         )
         if self.git_obj.type not in self.allowed_types:
             raise Http404()
@@ -192,7 +194,7 @@ class DownloadViewMixin(BlobViewMixin):
 
     def get(self, request, *args, **kwargs):
         field = self.get_field()
-        return sendfile.sendfile(
+        return django_sendfile.sendfile(
             request,
             field.storage.path(field.name),  # absolute path
             attachment=self.attachment,
