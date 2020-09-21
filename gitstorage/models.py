@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
-import os.path
+
+from pathlib import Path
 
 from django.apps import apps as django_apps
 from django.core.exceptions import ImproperlyConfigured
@@ -21,7 +22,6 @@ from django.utils.translation import gettext_lazy as _
 
 from . import mimetypes
 from . import storage
-from . import utils
 from . import validators
 from .conf import settings
 
@@ -54,7 +54,7 @@ class BaseObject(models.Model):
 
 def blob_upload_to(instance, filename):
     """Do as Git, partition blob data by the first two characters of the id."""
-    return os.path.join(instance.id[:2], filename)
+    return Path(instance.id[:2]) / filename
 
 
 class BaseBlob(BaseObject):
@@ -99,12 +99,12 @@ class Tree(BaseObject):
 
 
 class TreePermissionQuerySet(models.QuerySet):
-    def current_permissions(self, path, **kwargs):
+    def current_permissions(self, path: Path, **kwargs):
         return self.filter(
-            parent_path=path.parent_path, name=path.name, **kwargs
+            parent_path=path.parent, name=path.name, **kwargs
         ).select_related("user")
 
-    def allowed_names(self, user, parent_path, **kwargs):
+    def allowed_names(self, user, parent_path: Path, **kwargs):
         if user:
             if user.is_superuser:
                 # Reads as no restriction
@@ -125,41 +125,37 @@ class TreePermissionQuerySet(models.QuerySet):
         all_permissions = self.filter(user=user).values_list("parent_path", "name")
         return ["/".join(filter(None, segments)) for segments in all_permissions]
 
-    def for_user(self, user, path, **kwargs):
+    def for_user(self, user, path: Path, **kwargs):
         if user and not user.is_authenticated:
             user = None
-        qs = self.filter(
-            user=user, parent_path=path.parent_path, name=path.name, **kwargs
-        )
+        qs = self.filter(user=user, parent_path=path.parent, name=path.name, **kwargs)
         return qs
 
-    def other_permissions(self, user, path, **kwargs):
+    def other_permissions(self, user, path: Path, **kwargs):
         if user and not user.is_authenticated:
             user = None
         return (
-            self.filter(user=user, parent_path=path.parent_path, **kwargs)
+            self.filter(user=user, parent_path=path.parent, **kwargs)
             .exclude(name=path.name)
             .exists()
         )
 
-    def is_allowed(self, user, path, **kwargs):
+    def is_allowed(self, user, path: Path, **kwargs):
         if user and user.is_superuser:
             return True
         return self.for_user(user, path, **kwargs).exists()
 
-    def add(self, users, path):
+    def add(self, users, path: Path):
         for user in users:
-            self.get_or_create(parent_path=path.parent_path, name=path.name, user=user)
+            self.get_or_create(parent_path=path.parent, name=path.name, user=user)
 
-    def remove(self, users, path):
+    def remove(self, users, path: Path):
         # Does not work for [None]
         if users == [None]:
-            self.filter(
-                parent_path=path.parent_path, name=path.name, user=None
-            ).delete()
+            self.filter(parent_path=path.parent, name=path.name, user=None).delete()
         else:
             self.filter(
-                parent_path=path.parent_path, name=path.name, user__in=users
+                parent_path=path.parent, name=path.name, user__in=users
             ).delete()
 
 
@@ -192,5 +188,5 @@ class TreePermission(models.Model):
         verbose_name_plural = _("tree permissions")
 
     def __str__(self):
-        path = utils.Path(self.parent_path).resolve(self.name)
+        path = Path(self.parent_path) / self.name
         return "{0} on {1}".format(self.user, path)

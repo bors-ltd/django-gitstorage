@@ -16,6 +16,7 @@
 from functools import update_wrapper
 import logging
 import operator
+from pathlib import Path
 import unicodedata
 
 from django.core.exceptions import PermissionDenied
@@ -29,7 +30,6 @@ import pygit2
 from . import forms
 from . import models
 from . import repository
-from .utils import Path
 
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ class ObjectViewMixin(object):
             filtered.append(
                 {
                     "name": entry.name,
-                    "path": path.resolve(entry.name),
+                    "path": str(path / entry.name),
                     "tree": models.Tree(id=entry.hex),
                 }
             )
@@ -109,9 +109,9 @@ class ObjectViewMixin(object):
 
         breadcrumbs = []
         path = self.path
-        while path:
-            breadcrumbs.insert(0, path)
-            path = Path(path.parent_path)
+        while path != Path("."):
+            breadcrumbs.insert(0, str(path))
+            path = path.parent
 
         context["path"] = self.path
         context["git_obj"] = self.git_obj
@@ -167,7 +167,7 @@ class BlobViewMixin(ObjectViewMixin):
 
     def check_permissions(self):
         if not models.TreePermission.objects.is_allowed(
-            self.request.user, Path(self.path.parent_path)
+            self.request.user, self.path.parent
         ):
             raise PermissionDenied()
 
@@ -241,7 +241,7 @@ class TreeViewMixin(ObjectViewMixin):
             blobs.append(
                 {
                     "name": name,
-                    "path": self.path.resolve(name),
+                    "path": str(self.path / name),
                     "blob": blob,
                     "ctime": blob.ctime,
                     "mtime": blob.mtime,

@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
 
+from pathlib import Path
+
 import pygit2
 
 from django.core.exceptions import PermissionDenied
@@ -26,7 +28,6 @@ from django.test.client import RequestFactory
 from gitstorage import factories
 from gitstorage import models
 from gitstorage import repository
-from gitstorage.utils import Path
 from gitstorage.tests.utils import VanillaRepositoryMixin
 
 from tests.project import views
@@ -52,9 +53,9 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
             self.git_obj = git_obj
 
             # Permission to parent path
-            parent = Path(self.path.parent_path)
+            parent = self.path.parent
             self.permission = factories.TreePermissionFactory(
-                parent_path=parent.parent_path, name=parent.name, user=self.user
+                parent_path=parent.parent, name=parent.name, user=self.user
             )
 
             # Blob object
@@ -69,7 +70,7 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
 
             # Permission to itself
             factories.TreePermissionFactory(
-                parent_path=self.path.parent_path, name=self.path.name, user=self.user
+                parent_path=self.path.parent, name=self.path.name, user=self.user
             )
 
 
@@ -104,7 +105,7 @@ class SharesViewTestCase(BaseViewTestCase):
     def test_post(self):
         user = factories.UserFactory()
         factories.TreePermissionFactory(
-            parent_path=self.path.parent_path, name=self.path.name, user=user
+            parent_path=self.path.parent, name=self.path.name, user=user
         )
 
         response = self.client.post(reverse("tree_shares", args=[self.path]))
@@ -201,9 +202,9 @@ class BlobViewTestCase(BaseViewTestCase):
         response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 403)
 
-        tree_path = Path(self.path.parent_path)
+        tree_path = self.path.parent
         factories.TreePermissionFactory(
-            parent_path=tree_path.parent_path, name=tree_path.name, user=user
+            parent_path=tree_path.parent, name=tree_path.name, user=user
         )
         response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 200)
@@ -268,7 +269,7 @@ class TreeViewTestCase(BaseViewTestCase):
         self.assertEqual(response.status_code, 403)
 
         factories.TreePermissionFactory(
-            parent_path=self.path.parent_path, name=self.path.name, user=user
+            parent_path=self.path.parent, name=self.path.name, user=user
         )
         response = self.client.get(reverse("repo_browse", args=[self.path]))
         self.assertEqual(response.status_code, 200)

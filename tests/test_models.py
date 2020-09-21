@@ -12,7 +12,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with django-gitstorage.  If not, see <http://www.gnu.org/licenses/>.
-import io
+
+from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 from django.test.testcases import TestCase
@@ -20,9 +21,6 @@ from django.test.utils import override_settings
 
 from gitstorage import factories
 from gitstorage import models
-from gitstorage import utils
-from gitstorage import repository
-from gitstorage.tests import utils as tests_utils
 
 
 class BlobTestCase(TestCase):
@@ -58,13 +56,13 @@ class TreePermissionManagerTestCase(TestCase):
         )
 
     def test_current_permissions(self):
-        path = utils.Path("my/path/my_name")
+        path = Path("my/path/my_name")
         current_permissions = models.TreePermission.objects.current_permissions(path)
         self.assertQuerysetEqual(
             current_permissions, ["<TreePermission: john_doe on my/path/my_name>"]
         )
 
-        path = utils.Path("my/path")
+        path = Path("my/path")
         current_permissions = models.TreePermission.objects.current_permissions(path)
         self.assertQuerysetEqual(current_permissions, [])
 
@@ -103,7 +101,7 @@ class TreePermissionManagerTestCase(TestCase):
         self.assertEqual(allowed_paths, [])
 
     def test_is_allowed(self):
-        path = utils.Path("my/path/my_name")
+        path = Path("my/path/my_name")
         self.assertFalse(models.TreePermission.objects.is_allowed(self.anonymous, path))
         self.assertTrue(models.TreePermission.objects.is_allowed(self.superuser, path))
         self.assertTrue(models.TreePermission.objects.is_allowed(self.user, path))
@@ -113,7 +111,7 @@ class TreePermissionManagerTestCase(TestCase):
 
     def test_add(self):
         models.TreePermission.objects.add(
-            [self.user, self.other_user], utils.Path("my/path/my_name")
+            [self.user, self.other_user], Path("my/path/my_name")
         )
         self.assertQuerysetEqual(
             models.TreePermission.objects.order_by("pk"),
@@ -124,8 +122,6 @@ class TreePermissionManagerTestCase(TestCase):
         )
 
     def test_remove(self):
-        models.TreePermission.objects.remove([self.user], utils.Path("my/path/my_name"))
+        models.TreePermission.objects.remove([self.user], Path("my/path/my_name"))
         # Nothing raised
-        models.TreePermission.objects.remove(
-            [self.other_user], utils.Path("my/path/my_name")
-        )
+        models.TreePermission.objects.remove([self.other_user], Path("my/path/my_name"))

@@ -48,14 +48,14 @@ class Repository(pygit2.Repository):
     def open(self, path):
         """High-level object retriever.
 
-            @param path: object path, relative to the repository root
+        @param path: object path, relative to the repository root
         """
 
         # Repository root
-        if path in ("", "/"):
+        if str(path) in ("", ".", "/"):
             return self.tree
 
-        tree_entry = self.tree[path]
+        tree_entry = self.tree[str(path)]
         return self[tree_entry.id]
 
     def listdir(self, path):
