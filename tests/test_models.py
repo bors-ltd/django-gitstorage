@@ -15,9 +15,7 @@
 
 from pathlib import Path
 
-from django.core.exceptions import ImproperlyConfigured
 from django.test.testcases import TestCase
-from django.test.utils import override_settings
 
 from gitstorage import factories
 from gitstorage import models
@@ -25,11 +23,9 @@ from gitstorage import models
 
 class BlobTestCase(TestCase):
     def setUp(self):
-        self.blob = factories.BlobFactory(id="c0d11342c4241087e3c126f7666d618586e39068")
-
-    def test_swapped_model(self):
-        with override_settings(GITSTORAGE_BLOB_MODEL="project.DummyBlob"):
-            self.assertRaises(ImproperlyConfigured, models.get_blob_model)
+        self.blob = factories.BlobFactory.build(
+            id="c0d11342c4241087e3c126f7666d618586e39068"
+        )
 
     def test_str(self):
         self.assertEqual(str(self.blob), "c0d11342c4241087e3c126f7666d618586e39068")

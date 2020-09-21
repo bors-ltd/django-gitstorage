@@ -18,13 +18,13 @@ import logging
 import operator
 from pathlib import Path
 import unicodedata
+import urllib.parse
 
 from django.core.exceptions import PermissionDenied
-from django.http.response import Http404
+from django.http.response import Http404, HttpResponse
 from django.utils.decorators import classonlymethod
 from django.views import generic as generic_views
 
-import django_sendfile
 import pygit2
 
 from . import forms
@@ -33,8 +33,6 @@ from . import repository
 
 
 logger = logging.getLogger(__name__)
-
-Blob = models.get_blob_model()
 
 
 class ObjectViewMixin(object):
@@ -64,7 +62,7 @@ class ObjectViewMixin(object):
         """Abstract, no implicit permission."""
         raise NotImplementedError()
 
-    def filter_trees(self, path):
+    def filter_trees(self, path: Path):
         """
         Filter tree entries of the given tree by permission allowance.
 
@@ -97,7 +95,9 @@ class ObjectViewMixin(object):
         Trees are in-memory objects built on the fly.
         """
         if self.git_obj.type == pygit2.GIT_OBJ_BLOB:
-            self.object = Blob.objects.get(pk=self.git_obj.hex)
+            self.object = models.Blob(
+                pk=self.git_obj.hex, name=self.path.name, size=self.git_obj.size
+            )
         elif self.git_obj.type == pygit2.GIT_OBJ_TREE:
             self.object = models.Tree(pk=self.git_obj.hex)
 
@@ -110,7 +110,7 @@ class ObjectViewMixin(object):
         breadcrumbs = []
         path = self.path
         while path != Path("."):
-            breadcrumbs.insert(0, str(path))
+            breadcrumbs.insert(0, path)
             path = path.parent
 
         context["path"] = self.path
@@ -177,29 +177,28 @@ class DownloadViewMixin(BlobViewMixin):
 
     attachment = True
 
-    def get_filename(self):
-        """The name under which the blob is currently know, which may not be the name of the data file,
-        (renames, storage suffixing to avoid name clash...).
-
-        Also clean up filesystem idiosyncrasies: "de\u0301po\u0302t.jpg" -> "dépôt.jpg".
-        """
-        return unicodedata.normalize("NFKC", self.path.name)
-
-    def get_field(self):
-        """The FileField to serve, blob.data by default.
-
-        This may be an alternative field for thumbnail preview, file format conversion...
-        """
-        return self.object.data
-
     def get(self, request, *args, **kwargs):
-        field = self.get_field()
-        return django_sendfile.sendfile(
-            request,
-            field.storage.path(field.name),  # absolute path
-            attachment=self.attachment,
-            attachment_filename=self.get_filename(),
-        )
+        disposition = ["attachment" if self.attachment else "inline"]
+
+        attachment_filename = self.path.name
+        ascii_filename = unicodedata.normalize("NFKD", attachment_filename)
+        ascii_filename = ascii_filename.encode("ascii", "ignore").decode()
+        disposition.append(f'filename="{ascii_filename}"')
+
+        if ascii_filename != attachment_filename:
+            quoted_filename = urllib.parse.quote(attachment_filename)
+            disposition.append(f"filename*=UTF-8''{quoted_filename}")
+
+        # The context manager will "release" the buffer on exit
+        with memoryview(self.git_obj) as m:
+            response = HttpResponse(m)
+            response["Content-Type"] = self.object.mimetype
+            if self.object.encoding:
+                response["Content-Encoding"] = self.object.encoding
+            response["Content-Disposition"] = "; ".join(disposition)
+            # Content-Length comes from the memory object length
+
+            return response
 
 
 class InlineViewMixin(DownloadViewMixin):
@@ -223,31 +222,23 @@ class TreeViewMixin(ObjectViewMixin):
             raise PermissionDenied()
 
     def filter_blobs(self):
-        hex_to_name = {}
         _trees, blobs = self.repo.listdir(self.path)
+
+        objects = []
         for entry in blobs:
             # Hide hidden files
             if entry.name[0] == ".":
                 continue
             # No check on allowed_names, all blobs are readable if their parent tree is
-            hex_to_name[entry.hex] = entry.name
-
-        # Fetch blobs for all of the entries in a single query
-        all_blobs = Blob.objects.in_bulk(hex_to_name.keys())
-
-        blobs = []
-        for blob_hex, name in hex_to_name.items():
-            blob = all_blobs[blob_hex]
-            blobs.append(
+            objects.append(
                 {
-                    "name": name,
-                    "path": str(self.path / name),
-                    "blob": blob,
-                    "ctime": blob.ctime,
-                    "mtime": blob.mtime,
+                    "name": entry.name,
+                    "path": str(self.path / entry.name),
+                    "blob": models.Blob(pk=entry.hex, name=entry.name),  # No size!
                 }
             )
-        return sorted(blobs, key=self.sort_key, reverse=self.sort_reverse)
+
+        return sorted(objects, key=self.sort_key, reverse=self.sort_reverse)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

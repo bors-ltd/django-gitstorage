@@ -48,10 +48,9 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
         assert self.client.login(username=self.user.username, password="password")
 
         git_obj = self.repo.open(self.path)
+        self.git_obj = git_obj
 
         if git_obj.type == pygit2.GIT_OBJ_BLOB:
-            self.git_obj = git_obj
-
             # Permission to parent path
             parent = self.path.parent
             self.permission = factories.TreePermissionFactory(
@@ -59,15 +58,8 @@ class BaseViewTestCase(VanillaRepositoryMixin, TestCase):
             )
 
             # Blob object
-            self.blob = factories.BlobFactory(
-                id=self.git_obj.hex,
-                size=self.git_obj.size,
-                data=SimpleUploadedFile(self.path.name, self.git_obj.data),
-            )
-
+            self.blob = factories.BlobFactory.from_blob(self.git_obj)
         elif git_obj.type == pygit2.GIT_OBJ_TREE:
-            self.git_obj = git_obj
-
             # Permission to itself
             factories.TreePermissionFactory(
                 parent_path=self.path.parent, name=self.path.name, user=self.user
@@ -217,7 +209,7 @@ class TreeViewTestCase(BaseViewTestCase):
         super().setUp()
         # A blob found in the path
         git_obj = self.repo.open("foo/bar/baz/qux.txt")
-        self.blob = factories.BlobFactory(id=git_obj.hex)
+        self.blob = factories.BlobFactory.from_blob(git_obj)
 
     def test_object_type(self):
         view = views.TestTreeView(git_obj=self.git_obj)
@@ -242,12 +234,6 @@ class TreeViewTestCase(BaseViewTestCase):
         self.assertEqual(blob["name"], "qux.txt")
         self.assertEqual(blob["path"], "foo/bar/baz/qux.txt")
         self.assertEqual(blob["blob"], self.blob)
-        self.assertAlmostEqual(
-            blob["ctime"].timestamp(), timezone.now().timestamp(), delta=1
-        )
-        self.assertAlmostEqual(
-            blob["mtime"].timestamp(), timezone.now().timestamp(), delta=1
-        )
 
     def test_get_hidden(self):
         response = self.client.get(
@@ -282,7 +268,7 @@ class AdminPermissionTestCase(BaseViewTestCase):
         super().setUp()
         # A blob found at the root
         self.git_obj = self.repo.open("foo.txt")
-        self.blob = factories.BlobFactory(id=self.git_obj.hex)
+        self.blob = factories.BlobFactory.from_blob(self.git_obj)
 
     def test_check_permission(self):
         user = factories.UserFactory(password="pass1")

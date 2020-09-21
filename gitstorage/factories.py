@@ -49,6 +49,15 @@ class BlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = models.Blob
 
+    @classmethod
+    def _generate_next_sequence(cls):
+        """managed = False"""
+        return None
+
+    @classmethod
+    def from_blob(cls, blob):
+        return cls.build(id=blob.hex, name=blob.name, size=blob.size)
+
 
 class TreeFactory(factory.django.DjangoModelFactory):
     class Meta:

@@ -15,30 +15,12 @@
 
 from pathlib import Path
 
-from django.apps import apps as django_apps
-from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from . import mimetypes
-from . import storage
 from . import validators
 from .conf import settings
-
-
-def get_blob_model():
-    """
-    Returns the Blob model that is active in this project.
-    """
-    try:
-        return django_apps.get_model(settings.GITSTORAGE_BLOB_MODEL)
-    except LookupError:
-        raise ImproperlyConfigured(
-            "GITSTORAGE_BLOB_MODEL refers to model '%s' that has not been installed"
-            % (settings.GITSTORAGE_BLOB_MODEL,)
-        )
-    except AttributeError:
-        return Blob
 
 
 class BaseObject(models.Model):
@@ -52,42 +34,34 @@ class BaseObject(models.Model):
         abstract = True
 
 
-def blob_upload_to(instance, filename):
-    """Do as Git, partition blob data by the first two characters of the id."""
-    return Path(instance.id[:2]) / filename
-
-
-class BaseBlob(BaseObject):
+class Blob(BaseObject):
+    name = models.CharField(max_length=200)
     size = models.IntegerField()
-    data = models.FileField(upload_to=blob_upload_to, storage=storage.default_storage)
-    ctime = models.DateTimeField(auto_now_add=True)
-    mtime = models.DateTimeField(auto_now=True)
+
+    _mimetype = None
+    _encoding = None
+
+    class Meta:
+        managed = False  # Built in-memory on the fly
 
     def __str__(self):
         return self.id
 
-    def fill(self, name):
-        """Method called by "sync_backend" after creation of the object.
-
-        Override to fill your own extra fields and call this parent.
-        """
-        pass
+    def guess_type(self):
+        mimetype, encoding = mimetypes.guess_type(self.name)
+        return mimetype or "application/octet-stream", encoding
 
     @property
     def mimetype(self):
-        mimetype, encoding = mimetypes.guess_type(self.data.name)
-        mimetype = mimetype or "application/octet-stream"
-        return mimetype
+        if not self._mimetype:
+            self._mimetype, self._encoding = self.guess_type()
+        return self._mimetype
 
-    class Meta:
-        abstract = True
-
-
-class Blob(BaseBlob):
-    class Meta:
-        verbose_name = _("Blob")
-        verbose_name_plural = _("Blobs")
-        swappable = "GITSTORAGE_BLOB_MODEL"
+    @property
+    def encoding(self):
+        if not self._mimetype:  # Don't use optional encoding
+            self._mimetype, self._encoding = self.guess_type()
+        return self._encoding
 
 
 class Tree(BaseObject):
@@ -95,7 +69,7 @@ class Tree(BaseObject):
         managed = False  # Built in-memory on the fly
 
     def __str__(self):
-        return "{0.id}".format(self)
+        return self.id
 
 
 class TreePermissionQuerySet(models.QuerySet):
