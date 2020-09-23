@@ -1,16 +1,21 @@
 GitStorage
 ==========
 
-A Django application to browse a Git repository and build Web applications on top of it.
+A Django application to browse files in a Git repository and build Web applications on top of it.
+
+The kind of repositories we target are hosting files, relatively big in size, and no commit history is considered.
+GitStorage is not a collaboration tool, only easing downloading the files from a browser.
+
+Files are served directly from the bare repository configured in the settings, no working copy is maintained.
 
 GitStorage is:
 
-- A `Git hook`_ to fill the database when pushing to the repository;
-
-- `Models`_ to represent and enrich Git objects, adding extra fields to blobs and allow access to trees;
+- Unmanaged `models`_ to represent Git objects, and use them in templates.
 
 - Mixin `views`_ to combine with class-based views to browse the repository and add or remove objects.
   on top of the repository;
+
+- Permissions to access a given tree (folder).
 
 GitStorage is built on top of `pygit2`_ and `libgit2`_, it does not call Git from the command line.
 
@@ -18,26 +23,8 @@ GitStorage is built on top of `pygit2`_ and `libgit2`_, it does not call Git fro
 
 .. _`libgit2`: http://libgit2.github.com/
 
-Hopefully some day Git database backends will be more easily accessible with Python wrappers,
-and this project will become a lot simpler.
-
 
 .. contents::
-
-Git Hook
---------
-
-The journey starts with the ``hooks/update`` hook to install into the repository being exposed.
-
-When objects are pushed to this repository, it will call a management command to fill the database with
-new blobs and compute their extra fields.
-
-Copy the script to the hooks directory of your repository and edit the "VENV" and "DJANGO_SETTINGS_MODULE" variables.
-Make sure the script has the executable bit.
-
-You are advised to set "verbose" to true for the first tries.
-
-In fact, feel free to edit this script to suit your needs and deployment constraints.
 
 Models
 ------
@@ -45,11 +32,15 @@ Models
 Blob
 """"
 
-Git object of type blob with extra fields possible. We store the data in a filesystem storage,
-so this file can be opened by any regular tool for extra transformation: metadata extraction, thumbnails...
-The storage also provides an internal URL for the front-end web server to serve it (X-Accel-Redirect).
+This unmanaged model represents a git object of type blob,
+but that would know its filename from the parent tree.
+The filename extension then gives us the mimetype associated.
 
-We ignore all other object types.
+Tree
+""""
+
+This unmanaged model represents a git object of type tree, which can be checked for
+access permission.
 
 TreePermission
 """"""""""""""
@@ -104,18 +95,6 @@ ShareViewMixin
 """"""""""""""
 
 Share access to the current tree to a user by adding a tree permission.
-
-Management Command
-------------------
-
-sync_blobs
-""""""""""
-
-Called by the "update" hook you need to add to your repository (see `Git Hook`_).
-
-Browse the given range of commits to created missing blobs and compute their extra fields.
-
-Cleaning up of orphan blobs is not handled.
 
 Tests
 -----

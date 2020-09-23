@@ -1,5 +1,5 @@
 """
-Django storage and views to browse a Git repository.
+Django views to browse files in a Git repository.
 """
 
 __author__ = "Bors LTD"
