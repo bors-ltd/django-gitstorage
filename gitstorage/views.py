@@ -180,7 +180,8 @@ class DownloadViewMixin(BlobViewMixin):
     def get(self, request, *args, **kwargs):
         disposition = ["attachment" if self.attachment else "inline"]
 
-        attachment_filename = self.path.name
+        # Clean up filesystem idiosyncrasies: "de\u0301po\u0302t.jpg" -> "dépôt.jpg"
+        attachment_filename = unicodedata.normalize("NFKC", self.path.name)
         ascii_filename = unicodedata.normalize("NFKD", attachment_filename)
         ascii_filename = ascii_filename.encode("ascii", "ignore").decode()
         disposition.append(f'filename="{ascii_filename}"')

@@ -18,9 +18,7 @@ from pathlib import Path
 import pygit2
 
 from django.core.exceptions import PermissionDenied
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-from django.utils import timezone
 from django.http.response import Http404
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -172,7 +170,12 @@ class BlobViewTestCase(BaseViewTestCase):
         self.assertEqual(list(context["root_trees"]), [])  # No permission on root
         self.assertEqual(
             context["breadcrumbs"],
-            ["foo", "foo/bar", "foo/bar/baz", "foo/bar/baz/qux.txt"],
+            [
+                Path("foo"),
+                Path("foo/bar"),
+                Path("foo/bar/baz"),
+                Path("foo/bar/baz/qux.txt"),
+            ],
         )
 
     def test_get_hidden(self):
@@ -227,7 +230,9 @@ class TreeViewTestCase(BaseViewTestCase):
         self.assertEqual(context["git_obj"].hex, self.git_obj.hex)
         self.assertEqual(context["object"].id, self.git_obj.hex)
         self.assertEqual(context["root_trees"], [])  # No permission on root
-        self.assertEqual(context["breadcrumbs"], ["foo", "foo/bar", "foo/bar/baz"])
+        self.assertEqual(
+            context["breadcrumbs"], [Path("foo"), Path("foo/bar"), Path("foo/bar/baz")]
+        )
         self.assertEqual(context["trees"], [])
         self.assertEqual(len(context["blobs"]), 1)
         blob = context["blobs"][0]
